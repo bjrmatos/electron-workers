@@ -5,10 +5,10 @@ node_js:
   - "0.12"
   - "0.10"
 install:
-  - Xvfb -ac -screen scrn 1280x2000x24 :9.0 &
-  - export DISPLAY=':9.0'
   - npm install electron-prebuilt
   - npm install
+script:
+  - xvfb-run --server-args="-screen 0 1024x768x24" npm run test
 addons:
   apt:
     packages:
@@ -19,3 +19,19 @@ addons:
       - libxss1
       - libnss3
       - xvfb
+      - x11-xkb-utils
+      - xfonts-100dpi
+      - xfonts-75dpi
+      - xfonts-scalable
+      - xfonts-cyrillic
+      - x11-apps
+      - clang
+      - libdbus-1-dev
+      - libnotify-dev
+      - libgnome-keyring-dev
+      - libgconf2-dev
+      - libcap-dev
+      - libcups2-dev
+      - libxtst-dev
+      - gcc-multilib
+      - g++-multilib
