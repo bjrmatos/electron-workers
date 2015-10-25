@@ -59,8 +59,8 @@ electronWorkers.start(function(startErr) {
 ## Options
 
 `pathToScript` (required) - path to the electron script<br/>
-`pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from `electron-prebuilt` or the value in your `$PATH`<br />
-`electronArgs` Array - pass custom arguments to the electron executable. ej: `electronArgs: ['--some-value=2', '--enable-some-behaviour']`
+`pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from `electron-prebuilt` or the value in your `$PATH`<br/>
+`electronArgs` Array - pass custom arguments to the electron executable. ej: `electronArgs: ['--some-value=2', '--enable-some-behaviour']`<br/>
 `timeout` - execution timeout in ms<br/>
 `numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine<br/>
 `host` - ip or hostname where to start listening phantomjs web service, default 127.0.0.1<br/>
