@@ -8,7 +8,7 @@
     "build": "babel src --out-dir lib",
     "lint": "eslint src test",
     "test": "mocha test/test.js --timeout 4000",
-    "prepublish": "npm-run-all lint test clean build"
+    "prepublish": "npm-run-all lint clean build"
   },
   "author": {
     "name": "BJR Matos",
