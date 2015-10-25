@@ -1,0 +1,72 @@
+{
+  "extends": "eslint-config-airbnb/base", // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb/.eslintrc
+
+  // Allow the following global variables
+  "env": {
+    "browser": true, // browser global variables
+    "node": true, // Node.js global variables and Node.js scoping.
+    "mocha": true // adds all of the Mocha testing global variables.
+  },
+
+  "ecmaFeatures": {
+    "restParams": true,
+    "experimentalObjectRestSpread": true
+  },
+
+  "rules": {
+    /**
+     * ES6
+     */
+    "prefer-const": 0,
+
+    /**
+     * Variables
+     */
+    "no-shadow": [2, {
+      "builtinGlobals": true
+    }],
+    "no-unused-vars": [2, {
+      "vars": "all",
+      "args": "after-used"
+    }],
+    "no-use-before-define": [2, "nofunc"],
+
+    /**
+     * Possible errors
+     */
+    "comma-dangle": [2, "never"],
+    "no-inner-declarations": [2, "both"],
+
+    /**
+     * Best practices
+     */
+    "curly": 2,
+    "dot-notation": [2, {
+      "allowKeywords": true,
+      "allowPattern": "^[a-z]+(_[a-z]+)+$"
+    }],
+    "eqeqeq": [2, "allow-null"],
+    "no-eq-null": 0,
+    "no-redeclare": [2, {
+      "builtinGlobals": true
+    }],
+    "wrap-iife": [2, "inside"],
+
+    /**
+     * Style
+     */
+    "indent": [2, 2, {
+      "VariableDeclarator": {
+        "var": 2,
+        "let": 2,
+        "const": 3
+      }
+    }],
+    "func-names": 0,
+    "no-multiple-empty-lines": [2, {
+      "max": 1
+    }],
+    "no-extra-parens": [2, "functions"],
+    "one-var": 0
+  }
+}
