@@ -6,8 +6,6 @@ var http = require('http'),
 var port = process.env.ELECTRON_WORKER_PORT,
     host = process.env.ELECTRON_WORKER_HOST;
 
-console.log('inside electron..');
-
 app.on('ready', () => {
   var server = http.createServer((req, res) => {
     res.writeHead(200, {'Content-Type': 'application/json'});
