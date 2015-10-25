@@ -16,6 +16,10 @@ describe('electron workers', () => {
 
     electronManager.start((startErr) => {
       if (startErr) {
+        startErr.workerErrors.forEach((workerErr) => {
+          console.log(workerErr.message);
+        });
+
         return done(startErr);
       }
 
