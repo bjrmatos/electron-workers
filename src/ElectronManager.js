@@ -11,10 +11,14 @@ import findIndex from 'lodash.findindex';
 import ElectronWorker from './ElectronWorker';
 
 const numCPUs = os.cpus().length;
-const electronPath = getElectronPath();
+let ELECTRON_PATH;
 
 function getElectronPath() {
   let electron;
+
+  if (ELECTRON_PATH) {
+    return ELECTRON_PATH;
+  }
 
   try {
     // first try to find the electron executable if it is installed from electron-prebuilt..
@@ -28,6 +32,8 @@ function getElectronPath() {
     }
   }
 
+  ELECTRON_PATH = electron;
+
   return electron;
 }
 
@@ -40,7 +46,7 @@ class ElectronManager extends EventEmitter {
     this._electronInstances = [];
     this.options = options;
     this.options.electronArgs = this.options.electronArgs || [];
-    this.options.pathToElectron = this.options.pathToElectron || electronPath;
+    this.options.pathToElectron = this.options.pathToElectron || getElectronPath();
     this.options.numberOfWorkers = this.options.numberOfWorkers || numCPUs;
     this.options.timeout = this.options.timeout || 180000;
     this.options.host = this.options.host || '127.0.0.1';
