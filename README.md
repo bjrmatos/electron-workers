@@ -63,6 +63,8 @@ electronWorkers.start(function(startErr) {
 
 `pathToScript` (required) - path to the electron script<br/>
 `pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from `electron-prebuilt` or the value in your `$PATH`<br/>
+`debug` Number - pass debug port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)<br/>
+`debugBrk` Number - pass debug-brk port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)<br/>
 `electronArgs` Array - pass custom arguments to the electron executable. ej: `electronArgs: ['--some-value=2', '--enable-some-behaviour']`<br/>
 `timeout` - execution timeout in ms<br/>
 `numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine<br/>

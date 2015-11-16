@@ -67,11 +67,19 @@ class ElectronWorker extends EventEmitter {
         pathToScript,
         hostEnvVarName,
         portEnvVarName,
-        host
+        host,
+        debug,
+        debugBrk
       } = this.options;
 
       childArgs = electronArgs.slice();
       childArgs.unshift(pathToScript);
+
+      if (debugBrk != null) {
+        childArgs.unshift('--debug-brk=' + debugBrk);
+      } else if (debug != null) {
+        childArgs.unshift('--debug=' + debug);
+      }
 
       childOpts = {
         env: {}

@@ -90,6 +90,8 @@ class ElectronManager extends EventEmitter {
 
     for (let ix = 0; ix < numberOfWorkers; ix++) {
       this._electronInstances.push(new ElectronWorker({
+        debug: this.options.debug,
+        debugBrk: this.options.debugBrk,
         electronArgs: this.options.electronArgs,
         pathToElectron: this.options.pathToElectron,
         pathToScript: this.options.pathToScript,
