@@ -7,6 +7,62 @@ import ElectronManager from '../src/ElectronManager';
 /* eslint padded-blocks: [0] */
 describe('electron workers', () => {
 
+  it('should pass worker id as an env var', function(done) {
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'workerId.js'),
+      numberOfWorkers: 2
+    });
+
+    electronManager.start((startErr) => {
+      let workersResponseId = [],
+          isDone = false,
+          executeCount = 0;
+
+      if (startErr) {
+        return done(startErr);
+      }
+
+      function executeTask() {
+        electronManager.execute({}, (executeErr, workerIdResp) => {
+          if (isDone) {
+            return;
+          }
+
+          if (executeErr) {
+            isDone = true;
+            done(executeErr);
+            return;
+          }
+
+          workersResponseId.push(workerIdResp);
+
+          executeCount++;
+
+          if (executeCount === electronManager._electronInstances.length) {
+            let workerIds,
+                workersNotFound;
+
+            workerIds = electronManager._electronInstances.map((worker) => {
+              return worker.id;
+            });
+
+            workersNotFound = workerIds.filter((workerId) => {
+              return workersResponseId.indexOf(workerId) === -1;
+            });
+
+            should(workersNotFound.length).be.eql(0);
+            electronManager.kill();
+            done();
+          }
+        });
+      }
+
+      for (let ix = 0; ix < electronManager._electronInstances.length; ix++) {
+        executeTask();
+      }
+    });
+  });
+
   it('should pass custom arguments to the electron executable', function(done) {
     let electronManager = new ElectronManager({
       electronArgs: ['--some-value=2', '--enable-some-behaviour'],

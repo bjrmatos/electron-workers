@@ -16,7 +16,10 @@ var http = require('http'),
 
 // every worker gets unique port, get it from a process environment variables
 var port = process.env.ELECTRON_WORKER_PORT,
-    host = process.env.ELECTRON_WORKER_HOST;
+    host = process.env.ELECTRON_WORKER_HOST,
+    workerId = process.env.ELECTRON_WORKER_ID; // worker id useful for logging
+
+console.log('Hello from worker', workerId);
 
 app.on('ready', function() {
   // you can use any webserver library/framework you like (connect, express, hapi, etc)

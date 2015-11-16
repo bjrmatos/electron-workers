@@ -85,6 +85,7 @@ class ElectronWorker extends EventEmitter {
 
       childOpts.env[hostEnvVarName] = host;
       childOpts.env[portEnvVarName] = port;
+      childOpts.env.ELECTRON_WORKER_ID = this.id;
 
       /* eslint-disable no-unused-vars */
       // we send host and port as env vars to child process
