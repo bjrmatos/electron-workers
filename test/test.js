@@ -373,7 +373,7 @@ describe('electron workers', () => {
       if (!emitted) {
         done(new Error('worker was not recycled'));
       }
-    }, 2500);
+    }, 10000);
   });
 
   it('timeout should cb with error', function(done) {
