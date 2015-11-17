@@ -340,7 +340,7 @@ describe('electron workers', () => {
   });
 
   it('timeout should emit event', function(done) {
-    this.timeout(6000);
+    this.timeout(10000);
 
     let electronManager = new ElectronManager({
       pathToScript: path.join(__dirname, 'electron-script', 'timeout.js'),
@@ -348,10 +348,13 @@ describe('electron workers', () => {
       timeout: 10
     });
 
-    let emitted = false;
+    let emitted = false,
+        timeoutId;
 
     electronManager.on('workerTimeout', () => {
       emitted = true;
+      clearTimeout(timeoutId);
+      electronManager.kill();
       done();
     });
 
@@ -367,7 +370,7 @@ describe('electron workers', () => {
       });
     });
 
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       electronManager.kill();
 
       if (!emitted) {
@@ -377,7 +380,7 @@ describe('electron workers', () => {
   });
 
   it('timeout should cb with error', function(done) {
-    this.timeout(6000);
+    this.timeout(10000);
 
     let electronManager = new ElectronManager({
       pathToScript: path.join(__dirname, 'electron-script', 'timeout.js'),
