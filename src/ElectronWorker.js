@@ -182,9 +182,8 @@ class ElectronWorker extends EventEmitter {
     if (this._childProcess) {
       this._childProcess.kill();
       this._childProcess = undefined;
+      this.start(cb);
     }
-
-    this.start(cb);
   }
 
   kill() {
