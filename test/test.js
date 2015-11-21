@@ -399,6 +399,7 @@ describe('electron workers', () => {
         }
 
         electronManager.kill();
+        should(executeErr.workerTimeout).be.eql(true);
         done();
       });
     });

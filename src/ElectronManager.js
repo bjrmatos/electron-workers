@@ -159,16 +159,17 @@ class ElectronManager extends EventEmitter {
 
       this.emit('workerTimeout', worker);
 
+      let error = new Error();
+      error.workerTimeout = true;
+      error.message = 'Worker Timeout, the worker process does not respond after ' + workerTimeout + 'ms';
+      cb(error);
+
       // mark worker as busy before recycling
       worker.isBusy = true;
 
       // we only recyle the process if timeout is reached
       // TODO: decide what to do if the worker's recycle fail
       worker.recycle(() => {
-        let error = new Error();
-        error.message = 'Worker Timeout, the worker process does not respond after ' + workerTimeout + 'ms';
-        cb(error);
-
         // mark worker as free after recycling
         worker.isBusy = false;
         this.tryFlushQueue();
