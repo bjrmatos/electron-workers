@@ -89,7 +89,7 @@ class ElectronManager extends EventEmitter {
     }
 
     for (let ix = 0; ix < numberOfWorkers; ix++) {
-      this._electronInstances.push(new ElectronWorker({
+      let workerInstance = new ElectronWorker({
         debug: this.options.debug,
         debugBrk: this.options.debugBrk,
         env: this.options.env,
@@ -102,7 +102,17 @@ class ElectronManager extends EventEmitter {
         host: this.options.host,
         portLeftBoundary: this.options.portLeftBoundary,
         portRightBoundary: this.options.portRightBoundary
-      }));
+      });
+
+      workerInstance.on('processCreated', () => {
+        this.emit('workerProcessCreated', workerInstance, workerInstance._childProcess);
+      });
+
+      workerInstance.on('recycled', () => {
+        this.emit('workerRecycled', workerInstance);
+      });
+
+      this._electronInstances.push(workerInstance);
 
       this._electronInstances[ix].start(startHandler);
     }

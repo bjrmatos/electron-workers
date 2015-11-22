@@ -398,6 +398,73 @@ describe('electron workers', () => {
     });
   });
 
+  it('worker process creation should emit event', function(done) {
+    let numberOfProcess = 0;
+
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
+      numberOfWorkers: 2
+    });
+
+    electronManager.on('workerProcessCreated', function(worker) {
+      numberOfProcess++;
+
+      let matchWorker = electronManager._electronInstances.filter((electronInstance) => {
+        return electronInstance.id === worker.id;
+      });
+
+      should(matchWorker.length).be.eql(1);
+
+      if (numberOfProcess === 2) {
+        electronManager.kill();
+        done();
+      }
+    });
+
+    electronManager.start((startErr) => {
+      if (startErr) {
+        return done(startErr);
+      }
+    });
+  });
+
+  it('worker process recycle should emit event', function(done) {
+    let isDone = false;
+
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
+      numberOfWorkers: 1
+    });
+
+    electronManager.on('workerRecycled', function(worker) {
+      if (isDone) {
+        return;
+      }
+
+      isDone = true;
+      should(worker.id).be.eql(electronManager._electronInstances[0].id);
+      electronManager.kill();
+      done();
+    });
+
+    electronManager.start((startErr) => {
+      if (startErr) {
+        return done(startErr);
+      }
+
+      electronManager._electronInstances[0].recycle(function(recycleErr) {
+        if (isDone) {
+          return;
+        }
+
+        if (recycleErr) {
+          isDone = true;
+          return done(recycleErr);
+        }
+      });
+    });
+  });
+
   it('timeout should emit event', function(done) {
     this.timeout(10000);
 

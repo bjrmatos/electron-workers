@@ -110,6 +110,8 @@ class ElectronWorker extends EventEmitter {
       // we send host and port as env vars to child process
       this._childProcess = childProcess.spawn(pathToElectron, childArgs, childOpts);
 
+      this.emit('processCreated');
+
       this.checkAlive(cb);
     });
   }
@@ -184,7 +186,14 @@ class ElectronWorker extends EventEmitter {
     if (this._childProcess) {
       this._childProcess.kill();
       this._childProcess = undefined;
-      this.start(cb);
+      this.start((startErr) => {
+        if (startErr) {
+          return cb(startErr);
+        }
+
+        this.emit('recycled');
+        cb();
+      });
     }
   }
 
