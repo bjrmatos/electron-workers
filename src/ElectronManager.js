@@ -92,6 +92,8 @@ class ElectronManager extends EventEmitter {
       this._electronInstances.push(new ElectronWorker({
         debug: this.options.debug,
         debugBrk: this.options.debugBrk,
+        env: this.options.env,
+        stdio: this.options.stdio,
         electronArgs: this.options.electronArgs,
         pathToElectron: this.options.pathToElectron,
         pathToScript: this.options.pathToScript,

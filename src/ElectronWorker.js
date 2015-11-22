@@ -69,8 +69,14 @@ class ElectronWorker extends EventEmitter {
         portEnvVarName,
         host,
         debug,
-        debugBrk
+        debugBrk,
+        env,
+        stdio
       } = this.options;
+
+      if (!env) {
+        env = {};
+      }
 
       childArgs = electronArgs.slice();
       childArgs.unshift(pathToScript);
@@ -81,34 +87,30 @@ class ElectronWorker extends EventEmitter {
         childArgs.unshift('--debug=' + debug);
       }
 
-      childOpts = {
-        env: {}
-      };
-
       if (err) {
         return cb(err);
       }
 
       this.port = port;
 
-      childOpts.env[hostEnvVarName] = host;
-      childOpts.env[portEnvVarName] = port;
-      childOpts.env.ELECTRON_WORKER_ID = this.id;
+      childOpts = {
+        env: {
+          ...env,
+          [hostEnvVarName]: host,
+          [portEnvVarName]: port,
+          ELECTRON_WORKER_ID: this.id
+        },
+        stdio: 'inherit'
+      };
 
-      /* eslint-disable no-unused-vars */
+      if (stdio != null) {
+        childOpts.stdio = stdio;
+      }
+
       // we send host and port as env vars to child process
-      this._childProcess = childProcess.execFile(pathToElectron, childArgs, childOpts, (error, stdout, stderr) => {
-
-      });
-      /* eslint-enable no-unused-vars */
+      this._childProcess = childProcess.spawn(pathToElectron, childArgs, childOpts);
 
       this.checkAlive(cb);
-
-      process.stdout.setMaxListeners(0);
-      process.stderr.setMaxListeners(0);
-
-      this._childProcess.stdout.pipe(process.stdout);
-      this._childProcess.stderr.pipe(process.stderr);
     });
   }
 

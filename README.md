@@ -66,6 +66,8 @@ electronWorkers.start(function(startErr) {
 `debug` Number - pass debug port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)<br/>
 `debugBrk` Number - pass debug-brk port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)<br/>
 `electronArgs` Array - pass custom arguments to the electron executable. ej: `electronArgs: ['--some-value=2', '--enable-some-behaviour']`<br/>
+`env` Object - pass custom env vars to workers. ej: `env: { CUSTOM_ENV: 'foo' }`<br />
+`stdio` pass custom stdio option to worker's child process. see [node.js documentation](https://nodejs.org/api/child_process.html#child_process_options_stdio) for details<br/>
 `timeout` - execution timeout in ms<br/>
 `numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine<br/>
 `host` - ip or hostname where to start listening phantomjs web service, default 127.0.0.1<br/>

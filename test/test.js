@@ -63,6 +63,65 @@ describe('electron workers', () => {
     });
   });
 
+  it('should pass env vars', function(done) {
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'env.js'),
+      numberOfWorkers: 1,
+      env: {
+        FOO: 'FOO',
+        CUSTOM_ENV: 'FOO'
+      }
+    });
+
+    electronManager.start((startErr) => {
+      if (startErr) {
+        return done(startErr);
+      }
+
+      electronManager.execute({}, (executeErr, data) => {
+        if (executeErr) {
+          return done(executeErr);
+        }
+
+        should(data).be.eql({ FOO: 'FOO', CUSTOM_ENV: 'FOO' });
+        electronManager.kill();
+        done();
+      });
+    });
+  });
+
+  it('should pass custom stdio to worker child process', function(done) {
+    let customStdio = [null, null, null, 'ipc'];
+
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'ipc.js'),
+      numberOfWorkers: 1,
+      stdio: customStdio
+    });
+
+    electronManager.start((startErr) => {
+      if (startErr) {
+        return done(startErr);
+      }
+
+      electronManager._electronInstances[0].options.stdio.forEach(function(value, index) {
+        should(value).be.eql(customStdio[index]);
+      });
+
+      electronManager._electronInstances[0]._childProcess.on('message', function(msg) {
+        should(msg).be.eql('ping');
+        electronManager.kill();
+        done();
+      });
+
+      electronManager.execute({}, (executeErr) => {
+        if (executeErr) {
+          return done(executeErr);
+        }
+      });
+    });
+  });
+
   it('should pass custom arguments to the electron executable', function(done) {
     let electronManager = new ElectronManager({
       electronArgs: ['--some-value=2', '--enable-some-behaviour'],
