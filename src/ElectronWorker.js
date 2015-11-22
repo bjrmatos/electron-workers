@@ -199,6 +199,10 @@ class ElectronWorker extends EventEmitter {
 
   kill() {
     if (this._childProcess) {
+      if (this._childProcess.connected) {
+        this._childProcess.disconnect();
+      }
+
       this._childProcess.kill('SIGTERM');
       this._childProcess = undefined;
     }
