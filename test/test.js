@@ -219,6 +219,42 @@ describe('electron workers', () => {
     });
   });
 
+  it('should initialize workers correctly with port boundary', function(done) {
+    let isDone = false;
+
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
+      numberOfWorkers: 2,
+      portLeftBoundary: 10000,
+      portRightBoundary: 15000
+    });
+
+    electronManager.on('workerRecycling', function() {
+      if (isDone) {
+        return;
+      }
+
+      isDone = true;
+      done(new Error('worker was recycled when trying to use port boundary'));
+    });
+
+    electronManager.start((startErr) => {
+      if (isDone) {
+        return;
+      }
+
+      if (startErr) {
+        isDone = true;
+        return done(startErr);
+      }
+
+      should(electronManager._electronInstances.length).be.eql(2);
+      should(electronManager._electronInstances[0].port).not.be.eql(electronManager._electronInstances[1].port);
+      electronManager.kill();
+      done();
+    });
+  });
+
   it('should distribute tasks across all workers', function(done) {
     let electronManager = new ElectronManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),

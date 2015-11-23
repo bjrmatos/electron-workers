@@ -89,6 +89,13 @@ class ElectronManager extends EventEmitter {
     }
 
     for (let ix = 0; ix < numberOfWorkers; ix++) {
+      let workerPortLeftBoundary = this.options.portLeftBoundary;
+
+      // prevent that workers start with the same left boundary
+      if (workerPortLeftBoundary != null) {
+        workerPortLeftBoundary += ix;
+      }
+
       let workerInstance = new ElectronWorker({
         debug: this.options.debug,
         debugBrk: this.options.debugBrk,
@@ -101,7 +108,7 @@ class ElectronManager extends EventEmitter {
         hostEnvVarName: this.options.hostEnvVarName,
         portEnvVarName: this.options.portEnvVarName,
         host: this.options.host,
-        portLeftBoundary: this.options.portLeftBoundary,
+        portLeftBoundary: workerPortLeftBoundary,
         portRightBoundary: this.options.portRightBoundary
       });
 
