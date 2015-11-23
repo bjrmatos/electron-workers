@@ -446,19 +446,25 @@ describe('electron workers', () => {
   });
 
   it('worker process recycle should emit event', function(done) {
-    let isDone = false;
+    let isDone = false,
+        recyclingWasCalled = false;
 
     let electronManager = new ElectronManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 1
     });
 
-    electronManager.on('workerRecycled', function(worker) {
+    electronManager.on('workerRecycling', () => {
+      recyclingWasCalled = true;
+    });
+
+    electronManager.on('workerRecycled', (worker) => {
       if (isDone) {
         return;
       }
 
       isDone = true;
+      should(recyclingWasCalled).be.eql(true);
       should(worker.id).be.eql(electronManager._electronInstances[0].id);
       electronManager.kill();
       done();

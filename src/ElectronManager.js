@@ -109,6 +109,10 @@ class ElectronManager extends EventEmitter {
         this.emit('workerProcessCreated', workerInstance, workerInstance._childProcess);
       });
 
+      workerInstance.on('recycling', () => {
+        this.emit('workerRecycling', workerInstance);
+      });
+
       workerInstance.on('recycled', () => {
         this.emit('workerRecycled', workerInstance);
       });

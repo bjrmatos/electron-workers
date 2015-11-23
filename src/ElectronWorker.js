@@ -184,6 +184,8 @@ class ElectronWorker extends EventEmitter {
 
   recycle(cb) {
     if (this._childProcess) {
+      this.emit('recycling');
+
       this._childProcess.kill();
       this._childProcess = undefined;
       this.start((startErr) => {
