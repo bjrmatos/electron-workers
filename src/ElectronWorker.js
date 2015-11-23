@@ -203,7 +203,12 @@ class ElectronWorker extends EventEmitter {
         this._childProcess.disconnect();
       }
 
-      this._childProcess.kill('SIGTERM');
+      if (this.options.killSignal) {
+        this._childProcess.kill(this.options.killSignal);
+      } else {
+        this._childProcess.kill();
+      }
+
       this._childProcess = undefined;
     }
   }

@@ -90,6 +90,23 @@ describe('electron workers', () => {
     });
   });
 
+  it('should pass custom kill signal for worker process', function(done) {
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
+      killSignal: 'SIGKILL'
+    });
+
+    electronManager.start((startErr) => {
+      if (startErr) {
+        return done(startErr);
+      }
+
+      should(electronManager._electronInstances[0].options.killSignal).be.eql('SIGKILL');
+      electronManager.kill();
+      done();
+    });
+  });
+
   it('should pass custom stdio to worker child process', function(done) {
     let customStdio = [null, null, null, 'ipc'];
 

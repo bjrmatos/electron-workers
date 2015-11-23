@@ -55,6 +55,7 @@ electronWorkers.start(function(startErr) {
     }
 
     console.log(JSON.stringify(data)); // { someData: 'someData' } 
+    electronWorkers.kill(); // kill all workers explicitly
   });
 });
 ```
@@ -68,6 +69,7 @@ electronWorkers.start(function(startErr) {
 `electronArgs` Array - pass custom arguments to the electron executable. ej: `electronArgs: ['--some-value=2', '--enable-some-behaviour']`<br/>
 `env` Object - pass custom env vars to workers. ej: `env: { CUSTOM_ENV: 'foo' }`<br />
 `stdio` pass custom stdio option to worker's child process. see [node.js documentation](https://nodejs.org/api/child_process.html#child_process_options_stdio) for details<br/>
+`killSignal` String - when calling `electronWorkers.kill()` this value will be used to [kill the child process](https://nodejs.org/api/child_process.html#child_process_child_kill_signal) attached to the worker. see node.js docs for [more info on signal events](https://nodejs.org/api/process.html#process_signal_events)<br /> 
 `timeout` - execution timeout in ms<br/>
 `numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine<br/>
 `host` - ip or hostname where to start listening phantomjs web service, default 127.0.0.1<br/>
