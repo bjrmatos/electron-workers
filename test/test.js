@@ -559,7 +559,7 @@ describe('electron workers', () => {
       electronManager.kill();
 
       if (!emitted) {
-        done(new Error('worker was not recycled'));
+        done(new Error('worker timeout was not emitted'));
       }
     }, 10000);
   });
