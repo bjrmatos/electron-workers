@@ -44,7 +44,7 @@ class ElectronManager extends EventEmitter {
     let instance = this;
 
     this._electronInstances = [];
-    this.options = options;
+    this.options = { ...options };
     this.options.electronArgs = this.options.electronArgs || [];
     this.options.pathToElectron = this.options.pathToElectron || getElectronPath();
     this.options.numberOfWorkers = this.options.numberOfWorkers || numCPUs;
