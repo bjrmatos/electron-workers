@@ -2,13 +2,12 @@
 import ElectronManager from './ElectronManager';
 
 function createManager(options) {
-  return new ElectronManager(options);
+  let manager = new ElectronManager(options);
+  return manager;
 }
 
 function electronManager(options) {
   return createManager(options);
 }
-
-electronManager.createManager = createManager;
 
 export default electronManager;
