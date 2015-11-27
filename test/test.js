@@ -2,13 +2,13 @@
 import path from 'path';
 import os from 'os';
 import should from 'should';
-import ElectronManager from '../src/ElectronManager';
+import createManager from '../src/index';
 
 /* eslint padded-blocks: [0] */
 describe('electron workers', () => {
 
   it('should pass worker id as an env var', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'workerId.js'),
       numberOfWorkers: 2
     });
@@ -64,7 +64,7 @@ describe('electron workers', () => {
   });
 
   it('should pass env vars', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'env.js'),
       numberOfWorkers: 1,
       env: {
@@ -91,7 +91,7 @@ describe('electron workers', () => {
   });
 
   it('should pass custom kill signal for worker process', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       killSignal: 'SIGKILL'
     });
@@ -110,7 +110,7 @@ describe('electron workers', () => {
   it('should pass custom stdio to worker child process', function(done) {
     let customStdio = [null, null, null, 'ipc'];
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'ipc.js'),
       numberOfWorkers: 1,
       stdio: customStdio
@@ -140,7 +140,7 @@ describe('electron workers', () => {
   });
 
   it('should pass custom arguments to the electron executable', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       electronArgs: ['--some-value=2', '--enable-some-behaviour'],
       pathToScript: path.join(__dirname, 'electron-script', 'custom-args.js'),
       numberOfWorkers: 1
@@ -164,7 +164,7 @@ describe('electron workers', () => {
   });
 
   it('should spin up number of workers equal to number of cores by default', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js')
     });
 
@@ -180,7 +180,7 @@ describe('electron workers', () => {
   });
 
   it('should spin up specified number of workers', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 3
     });
@@ -197,7 +197,7 @@ describe('electron workers', () => {
   });
 
   it('should initialize free workers', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 2
     });
@@ -222,7 +222,7 @@ describe('electron workers', () => {
   it('should initialize workers correctly with port boundary', function(done) {
     let isDone = false;
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 2,
       portLeftBoundary: 10000,
@@ -256,7 +256,7 @@ describe('electron workers', () => {
   });
 
   it('should distribute tasks across all workers', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 4
     });
@@ -318,7 +318,7 @@ describe('electron workers', () => {
   it('should be able to communicate with slowly starting electron', function(done) {
     this.timeout(5000);
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'slowstart.js'),
       numberOfWorkers: 1
     });
@@ -341,7 +341,7 @@ describe('electron workers', () => {
   });
 
   it('should be able to communicate with electron', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 1
     });
@@ -364,7 +364,7 @@ describe('electron workers', () => {
   });
 
   it('should be able to start electron in a port range', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 1,
       portLeftBoundary: 10000,
@@ -383,7 +383,7 @@ describe('electron workers', () => {
   });
 
   it('should be able to communicate with just-port script', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'just-port.js'),
       numberOfWorkers: 1
     });
@@ -406,7 +406,7 @@ describe('electron workers', () => {
   });
 
   it('should be able to send just a simple string on input', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 1
     });
@@ -429,7 +429,7 @@ describe('electron workers', () => {
   });
 
   it('simple input string should not be stringified what is causing broken line endings', function(done) {
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 1
     });
@@ -454,7 +454,7 @@ describe('electron workers', () => {
   it('worker process creation should emit event', function(done) {
     let numberOfProcess = 0;
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 2
     });
@@ -482,7 +482,7 @@ describe('electron workers', () => {
     let isDone = false,
         recyclingWasCalled = false;
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'script.js'),
       numberOfWorkers: 1
     });
@@ -524,7 +524,7 @@ describe('electron workers', () => {
   it('should recycle on worker\'s process exit', function(done) {
     let responseData;
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'recycle-on-exit.js'),
       numberOfWorkers: 1
     });
@@ -559,7 +559,7 @@ describe('electron workers', () => {
   it('timeout should emit event', function(done) {
     this.timeout(10000);
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'timeout.js'),
       numberOfWorkers: 1,
       timeout: 10
@@ -599,7 +599,7 @@ describe('electron workers', () => {
   it('timeout should cb with error', function(done) {
     this.timeout(10000);
 
-    let electronManager = new ElectronManager({
+    let electronManager = createManager({
       pathToScript: path.join(__dirname, 'electron-script', 'timeout.js'),
       numberOfWorkers: 1,
       timeout: 100
