@@ -521,6 +521,41 @@ describe('electron workers', () => {
     });
   });
 
+  it('should recycle on worker\'s process exit', function(done) {
+    let responseData;
+
+    let electronManager = new ElectronManager({
+      pathToScript: path.join(__dirname, 'electron-script', 'recycle-on-exit.js'),
+      numberOfWorkers: 1
+    });
+
+    electronManager.on('workerRecycled', () => {
+      should(responseData).be.eql({ ok: true });
+      electronManager.kill();
+      done();
+    });
+
+    electronManager.start((startErr) => {
+      if (startErr) {
+        return done(startErr);
+      }
+
+      electronManager.execute({}, function(executeErr) {
+        if (executeErr) {
+          return done(executeErr);
+        }
+
+        electronManager.execute({}, function(executeErr2, data) {
+          if (executeErr2) {
+            return done(executeErr2);
+          }
+
+          responseData = data;
+        });
+      });
+    });
+  });
+
   it('timeout should emit event', function(done) {
     this.timeout(10000);
 

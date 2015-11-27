@@ -120,8 +120,14 @@ class ElectronManager extends EventEmitter {
         this.emit('workerRecycling', workerInstance);
       });
 
+      workerInstance.on('recyclingError', () => {
+        this.emit('workerRecyclingError', workerInstance);
+        this.tryFlushQueue();
+      });
+
       workerInstance.on('recycled', () => {
         this.emit('workerRecycled', workerInstance);
+        this.tryFlushQueue();
       });
 
       this._electronInstances.push(workerInstance);
@@ -162,9 +168,7 @@ class ElectronManager extends EventEmitter {
   }
 
   _executeInWorker(worker, data, options = {}, cb) {
-    let isDone = false,
-        workerTimeout,
-        timeoutId;
+    let workerTimeout;
 
     if (options.timeout != null) {
       workerTimeout = options.timeout;
@@ -172,55 +176,63 @@ class ElectronManager extends EventEmitter {
       workerTimeout = this.options.timeout;
     }
 
-    timeoutId = setTimeout(() => {
-      this._timeouts.splice(this._timeouts.indexOf(timeoutId), 1);
+    if (worker.shouldRevive) {
+      worker.start((startErr) => {
+        if (startErr) {
+          this.tryFlushQueue();
+          return cb(startErr);
+        }
 
-      if (isDone) {
-        return;
-      }
-
-      isDone = true;
-
-      this.emit('workerTimeout', worker);
-
-      let error = new Error();
-      error.workerTimeout = true;
-      error.message = 'Worker Timeout, the worker process does not respond after ' + workerTimeout + 'ms';
-      cb(error);
-
-      // mark worker as busy before recycling
-      worker.isBusy = true;
-
-      // we only recyle the process if timeout is reached
-      // TODO: decide what to do if the worker's recycle fail
-      worker.recycle(() => {
-        // mark worker as free after recycling
-        worker.isBusy = false;
-        this.tryFlushQueue();
+        executeTask.call(this);
       });
-    }, workerTimeout);
+    } else {
+      executeTask.call(this);
+    }
 
-    this._timeouts.push(timeoutId);
+    function executeTask() {
+      let isDone = false;
 
-    worker.execute(data, (err, result) => {
-      if (isDone) {
-        return;
-      }
+      let timeoutId = setTimeout(() => {
+        this._timeouts.splice(this._timeouts.indexOf(timeoutId), 1);
 
-      // clear timeout
-      this._timeouts.splice(this._timeouts.indexOf(timeoutId), 1);
-      clearTimeout(timeoutId);
+        if (isDone) {
+          return;
+        }
 
-      if (err) {
+        isDone = true;
+
+        this.emit('workerTimeout', worker);
+
+        let error = new Error();
+        error.workerTimeout = true;
+        error.message = 'Worker Timeout, the worker process does not respond after ' + workerTimeout + 'ms';
+        cb(error);
+
         this.tryFlushQueue();
-        cb(err);
-        return;
-      }
+      }, workerTimeout);
 
-      isDone = true;
-      this.tryFlushQueue();
-      cb(null, result);
-    });
+      this._timeouts.push(timeoutId);
+
+      worker.execute(data, (err, result) => {
+        if (isDone) {
+          return;
+        }
+
+        // clear timeout
+        this._timeouts.splice(this._timeouts.indexOf(timeoutId), 1);
+        clearTimeout(timeoutId);
+
+        if (err) {
+          this.tryFlushQueue();
+          cb(err);
+          return;
+        }
+
+        isDone = true;
+        this.tryFlushQueue();
+        cb(null, result);
+      });
+    }
   }
 
   tryFlushQueue() {

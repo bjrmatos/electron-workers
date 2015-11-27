@@ -42,6 +42,9 @@ class ElectronWorker extends EventEmitter {
     super();
 
     this.options = options;
+    this.firstStart = false;
+    this.shouldRevive = false;
+    this.exit = false;
     this.isBusy = false;
     this.id = uuid.v1();
 
@@ -110,9 +113,32 @@ class ElectronWorker extends EventEmitter {
       // we send host and port as env vars to child process
       this._childProcess = childProcess.spawn(pathToElectron, childArgs, childOpts);
 
+      this._childProcess.on('exit', () => {
+        // we only recycle the process on exit and if it is not in the middle
+        // of another recycling
+        if (this.firstStart && !this.isBusy) {
+          this.exit = true;
+          this.firstStart = false;
+
+          this.recycle(() => {
+            this.exit = false;
+          });
+        }
+      });
+
       this.emit('processCreated');
 
-      this.checkAlive(cb);
+      this.checkAlive((checkAliveErr) => {
+        if (checkAliveErr) {
+          return cb(checkAliveErr);
+        }
+
+        if (!this.firstStart) {
+          this.firstStart = true;
+        }
+
+        cb();
+      });
     });
   }
 
@@ -182,19 +208,39 @@ class ElectronWorker extends EventEmitter {
     req.end();
   }
 
-  recycle(cb) {
+  recycle(...args) {
+    let cb,
+        revive;
+
+    if (args.length < 2) {
+      cb = args[0];
+      revive = true;
+    } else {
+      cb = args[1];
+      revive = args[0];
+    }
+
     if (this._childProcess) {
+      // mark worker as busy before recycling
+      this.isBusy = true;
       this.emit('recycling');
 
-      this._childProcess.kill();
-      this._childProcess = undefined;
+      this.kill();
+
       this.start((startErr) => {
+        // mark worker as free after recycling
+        this.isBusy = false;
+        // if there is a error on worker recycling, revive it on next execute
         if (startErr) {
-          return cb(startErr);
+          this.shouldRevive = Boolean(revive);
+          cb(startErr);
+          this.emit('recyclingError', startErr);
+          return;
         }
 
-        this.emit('recycled');
+        this.shouldRevive = false;
         cb();
+        this.emit('recycled');
       });
     }
   }
@@ -205,10 +251,13 @@ class ElectronWorker extends EventEmitter {
         this._childProcess.disconnect();
       }
 
-      if (this.options.killSignal) {
-        this._childProcess.kill(this.options.killSignal);
-      } else {
-        this._childProcess.kill();
+      // guard against closing a process that has been closed before
+      if (!this.exit) {
+        if (this.options.killSignal) {
+          this._childProcess.kill(this.options.killSignal);
+        } else {
+          this._childProcess.kill();
+        }
       }
 
       this._childProcess = undefined;
