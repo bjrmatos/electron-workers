@@ -6,26 +6,33 @@
 
 import { EventEmitter } from 'events';
 import os from 'os';
+import debug from 'debug';
 import which from 'which';
 import findIndex from 'lodash.findindex';
 import ElectronWorker from './ElectronWorker';
+import { name as pkgName } from '../package.json';
 
-const numCPUs = os.cpus().length;
+const numCPUs = os.cpus().length,
+      debugManager = debug(pkgName + ':manager');
+
 let ELECTRON_PATH;
 
 function getElectronPath() {
   let electron;
 
   if (ELECTRON_PATH) {
+    debugManager('getting electron path from cache');
     return ELECTRON_PATH;
   }
 
   try {
     // first try to find the electron executable if it is installed from electron-prebuilt..
+    debugManager('trying to get electron path from electron-prebuilt module..');
     electron = require('electron-prebuilt');
   } catch (err) {
     if (err.code === 'MODULE_NOT_FOUND') {
       // ..if electron-prebuilt was not used try using which module
+      debugManager('trying to get electron path from $PATH..');
       electron = which.sync('electron');
     } else {
       throw err;
@@ -56,6 +63,7 @@ class ElectronManager extends EventEmitter {
     this.tasksQueue = [];
 
     function processExitHandler() {
+      debugManager('process exit: trying to kill workers..');
       instance.kill();
     }
 
@@ -70,6 +78,8 @@ class ElectronManager extends EventEmitter {
         { numberOfWorkers } = this.options,
         couldNotStartWorkersErr;
 
+    debugManager(`starting ${numberOfWorkers} worker(s)..`);
+
     function startHandler(err) {
       if (err) {
         workerErrors.push(err);
@@ -81,22 +91,26 @@ class ElectronManager extends EventEmitter {
         if (workerErrors.length) {
           couldNotStartWorkersErr = new Error('electron manager could not start all workers..');
           couldNotStartWorkersErr.workerErrors = workerErrors;
+          debugManager('electron manager could not start all workers..');
           return cb(couldNotStartWorkersErr);
         }
 
+        debugManager('all workers started correctly');
         cb(null);
       }
     }
 
     for (let ix = 0; ix < numberOfWorkers; ix++) {
-      let workerPortLeftBoundary = this.options.portLeftBoundary;
+      let workerPortLeftBoundary = this.options.portLeftBoundary,
+          workerOptions,
+          workerInstance;
 
       // prevent that workers start with the same left boundary
       if (workerPortLeftBoundary != null) {
         workerPortLeftBoundary += ix;
       }
 
-      let workerInstance = new ElectronWorker({
+      workerOptions = {
         debug: this.options.debug,
         debugBrk: this.options.debugBrk,
         env: this.options.env,
@@ -110,7 +124,10 @@ class ElectronManager extends EventEmitter {
         host: this.options.host,
         portLeftBoundary: workerPortLeftBoundary,
         portRightBoundary: this.options.portRightBoundary
-      });
+      };
+
+      debugManager(`creating worker ${ix + 1} with options:`, workerOptions);
+      workerInstance = new ElectronWorker(workerOptions);
 
       workerInstance.on('processCreated', () => {
         this.emit('workerProcessCreated', workerInstance, workerInstance._childProcess);
@@ -149,6 +166,8 @@ class ElectronManager extends EventEmitter {
       cb = args[0];
     }
 
+    debugManager('getting new task..');
+
     // simple round robin balancer across workers
     // on each execute, get the first available worker from the list...
     availableWorkerInstanceIndex = findIndex(this._electronInstances, {
@@ -157,12 +176,16 @@ class ElectronManager extends EventEmitter {
 
     if (availableWorkerInstanceIndex !== -1) {
       availableWorkerInstance = this._electronInstances.splice(availableWorkerInstanceIndex, 1)[0];
+
+      debugManager(`worker [${availableWorkerInstance.id}] has been choosen for the task..`);
+
       this._executeInWorker(availableWorkerInstance, data, options, cb);
       // ..and then the worker we have used becomes the last item in the list
       this._electronInstances.push(availableWorkerInstance);
       return;
     }
 
+    debugManager('no workers available, storing the task for later processing..');
     // if no available worker save task for later processing
     this.tasksQueue.push({ data, options, cb });
   }
@@ -177,12 +200,16 @@ class ElectronManager extends EventEmitter {
     }
 
     if (worker.shouldRevive) {
+      debugManager(`trying to revive worker [${worker.id}]..`);
+
       worker.start((startErr) => {
         if (startErr) {
+          debugManager(`worker [${worker.id}] could not revive..`);
           this.tryFlushQueue();
           return cb(startErr);
         }
 
+        debugManager(`worker [${worker.id}] has revived..`);
         executeTask.call(this);
       });
     } else {
@@ -199,17 +226,21 @@ class ElectronManager extends EventEmitter {
           return;
         }
 
+        debugManager(`task timeout in worker [${worker.id}] has been reached..`);
+
         isDone = true;
 
         this.emit('workerTimeout', worker);
 
         let error = new Error();
         error.workerTimeout = true;
-        error.message = 'Worker Timeout, the worker process does not respond after ' + workerTimeout + 'ms';
+        error.message = `Worker Timeout, the worker process does not respond after ${workerTimeout} ms`;
         cb(error);
 
         this.tryFlushQueue();
       }, workerTimeout);
+
+      debugManager(`executing task in worker [${worker.id}] with timeout:`, workerTimeout);
 
       this._timeouts.push(timeoutId);
 
@@ -223,12 +254,14 @@ class ElectronManager extends EventEmitter {
         clearTimeout(timeoutId);
 
         if (err) {
+          debugManager(`task has failed in worker [${worker.id}]..`);
           this.tryFlushQueue();
           cb(err);
           return;
         }
 
         isDone = true;
+        debugManager(`task executed correctly in worker [${worker.id}]..`);
         this.tryFlushQueue();
         cb(null, result);
       });
@@ -240,7 +273,10 @@ class ElectronManager extends EventEmitter {
         availableWorkerInstance,
         task;
 
+    debugManager('trying to flush queue of pending tasks..');
+
     if (this.tasksQueue.length === 0) {
+      debugManager('there is no pending tasks..');
       return;
     }
 
@@ -251,17 +287,23 @@ class ElectronManager extends EventEmitter {
     });
 
     if (availableWorkerInstanceIndex === -1) {
+      debugManager('no workers available to process pending task..');
       return;
     }
 
     task = this.tasksQueue.shift();
     availableWorkerInstance = this._electronInstances.splice(availableWorkerInstanceIndex, 1)[0];
+
+    debugManager(`worker [${availableWorkerInstance.id}] has been choosen for process pending task..`);
+
     this._executeInWorker(availableWorkerInstance, task.data, task.options, task.cb);
     // ..and then the worker we have used becomes the last item in the list
     this._electronInstances.push(availableWorkerInstance);
   }
 
   kill() {
+    debugManager('killing all workers..');
+
     this._timeouts.forEach((tId) => {
       clearTimeout(tId);
     });
