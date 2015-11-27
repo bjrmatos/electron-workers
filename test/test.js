@@ -474,10 +474,7 @@ describe('electron workers', () => {
       }
     });
 
-    electronManager.start((startErr) => {
-      if (startErr) {
-        return done(startErr);
-      }
+    electronManager.start(() => {
     });
   });
 
