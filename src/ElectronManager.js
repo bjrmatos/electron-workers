@@ -52,6 +52,7 @@ class ElectronManager extends EventEmitter {
 
     this._electronInstances = [];
     this.options = { ...options };
+    this.options.connectionMode = this.options.connectionMode || 'server';
     this.options.electronArgs = this.options.electronArgs || [];
     this.options.pathToElectron = this.options.pathToElectron || getElectronPath();
     this.options.numberOfWorkers = this.options.numberOfWorkers || numCPUs;
@@ -75,10 +76,14 @@ class ElectronManager extends EventEmitter {
   start(cb) {
     let started = 0,
         workerErrors = [],
-        { numberOfWorkers } = this.options,
+        { numberOfWorkers, connectionMode } = this.options,
         couldNotStartWorkersErr;
 
-    debugManager(`starting ${numberOfWorkers} worker(s)..`);
+    if (connectionMode !== 'server' && connectionMode !== 'ipc') {
+      return cb(new Error(`invalid connection mode: ${connectionMode}`));
+    }
+
+    debugManager(`starting ${numberOfWorkers} worker(s), mode: ${connectionMode}..`);
 
     function startHandler(err) {
       if (err) {
@@ -115,6 +120,7 @@ class ElectronManager extends EventEmitter {
         debugBrk: this.options.debugBrk,
         env: this.options.env,
         stdio: this.options.stdio,
+        connectionMode: this.options.connectionMode,
         killSignal: this.options.killSignal,
         electronArgs: this.options.electronArgs,
         pathToElectron: this.options.pathToElectron,
@@ -309,7 +315,7 @@ class ElectronManager extends EventEmitter {
     });
 
     this._electronInstances.forEach((workerInstance) => {
-      workerInstance.kill();
+      workerInstance.kill(true);
     });
 
     process.removeListener('exit', this._processExitHandler);

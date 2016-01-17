@@ -8,6 +8,7 @@ import netCluster from 'net-cluster';
 import portScanner from 'portscanner';
 import uuid from 'uuid';
 import checkPortStatus from './checkPortStatus';
+import checkIpcStatus from './checkIpcStatus';
 import { name as pkgName } from '../package.json';
 
 const debugWorker = debugPkg(pkgName + ':worker');
@@ -45,6 +46,14 @@ function findFreePortInRange(host, portLeftBoundary, portRightBoundary, cb) {
   });
 }
 
+function isValidConnectionMode(mode) {
+  if (mode !== 'server' && mode !== 'ipc') {
+    return false;
+  }
+
+  return true;
+}
+
 class ElectronWorker extends EventEmitter {
   constructor(options) {
     super();
@@ -55,19 +64,91 @@ class ElectronWorker extends EventEmitter {
     this.exit = false;
     this.isBusy = false;
     this.id = uuid.v1();
+    this._hardKill = false;
+    this._earlyError = false;
+    this._taskCallback = {};
 
-    if (options.portLeftBoundary && options.portRightBoundary) {
+    this.onWorkerProcessError = this.onWorkerProcessError.bind(this);
+    this.onWorkerProcessExitTryToRecyle = this.onWorkerProcessExitTryToRecyle.bind(this);
+    this.onWorkerProcessIpcMessage = this.onWorkerProcessIpcMessage.bind(this);
+
+    if (options.connectionMode === 'ipc') {
       this.findFreePort = function(cb) {
-        findFreePortInRange(options.host, options.portLeftBoundary, options.portRightBoundary, cb);
+        cb(null);
       };
     } else {
-      this.findFreePort = function(cb) {
-        findFreePort(options.host, cb);
-      };
+      if (options.portLeftBoundary && options.portRightBoundary) {
+        this.findFreePort = function(cb) {
+          findFreePortInRange(options.host, options.portLeftBoundary, options.portRightBoundary, cb);
+        };
+      } else {
+        this.findFreePort = function(cb) {
+          findFreePort(options.host, cb);
+        };
+      }
+    }
+  }
+
+  onWorkerProcessError(workerProcessErr) {
+    debugWorker(`worker [${this.id}] electron process error callback: ${workerProcessErr.message}`);
+
+    // don't handle early errors (errors between spawning the process and the first checkAlive call) in this handler
+    if (this._earlyError) {
+      debugWorker(`worker [${this.id}] ignoring error because it was handled previously (early): ${workerProcessErr.message}`);
+      return;
+    }
+
+    // try revive the process when an error is received,
+    // note that could not be spawn errors are not handled here..
+    if (this.firstStart && !this.isBusy && !this.shouldRevive) {
+      debugWorker(`worker [${this.id}] the process will be revived because an error: ${workerProcessErr.message}`);
+      this.shouldRevive = true;
+    }
+  }
+
+  onWorkerProcessExitTryToRecyle() {
+    debugWorker(`worker [${this.id}] onWorkerProcessExitTryToRecyle callback..`);
+
+    // we only recycle the process on exit and if it is not in the middle
+    // of another recycling
+    if (this.firstStart && !this.isBusy) {
+      debugWorker(`trying to recycle worker [${this.id}], reason: process exit..`);
+
+      this.exit = true;
+      this.firstStart = false;
+
+      this.recycle(() => {
+        this.exit = false;
+      });
+    }
+  }
+
+  onWorkerProcessIpcMessage(payload) {
+    let callback,
+        responseData;
+
+    if (payload && payload.workerEvent === 'taskResponse') {
+      debugWorker(`task in worker [${this.id}] has ended..`);
+
+      callback = this._taskCallback[payload.taskId];
+      responseData = payload.response;
+
+      if (!callback || typeof callback !== 'function') {
+        debugWorker(`worker [${this.id}] - callback registered for the task's response (${payload.taskId}) is not a function`);
+        return;
+      }
+
+      callback(null, responseData);
     }
   }
 
   start(cb) {
+    let isDone = false;
+
+    if (!isValidConnectionMode(this.options.connectionMode)) {
+      return cb(new Error(`invalid connection mode: ${this.options.connectionMode}`));
+    }
+
     debugWorker(`starting worker [${this.id}]..`);
 
     this.findFreePort((err, port) => {
@@ -84,7 +165,8 @@ class ElectronWorker extends EventEmitter {
         debug,
         debugBrk,
         env,
-        stdio
+        stdio,
+        connectionMode
       } = this.options;
 
       if (!env) {
@@ -110,12 +192,18 @@ class ElectronWorker extends EventEmitter {
       childOpts = {
         env: {
           ...env,
-          [hostEnvVarName]: host,
-          [portEnvVarName]: port,
           ELECTRON_WORKER_ID: this.id
-        },
-        stdio: 'inherit'
+        }
       };
+
+      // we send host and port as env vars to child process in server mode
+      if (connectionMode === 'server') {
+        childOpts.stdio = 'pipe';
+        childOpts.env[hostEnvVarName] = host;
+        childOpts.env[portEnvVarName] = port;
+      } else if (connectionMode === 'ipc') {
+        childOpts.stdio = ['pipe', 'pipe', 'pipe', 'ipc'];
+      }
 
       if (stdio != null) {
         childOpts.stdio = stdio;
@@ -123,74 +211,140 @@ class ElectronWorker extends EventEmitter {
 
       debugWorker(`spawning process for worker [${this.id}] with args:`, childArgs, 'and options:', childOpts);
 
-      // we send host and port as env vars to child process
       this._childProcess = childProcess.spawn(pathToElectron, childArgs, childOpts);
 
-      this._childProcess.on('exit', () => {
-        debugWorker(`worker [${this.id}] exit callback..`);
+      // ipc connection is required for ipc mode
+      if (connectionMode === 'ipc' && !this._childProcess.send) {
+        return cb(new Error('ipc mode requires a ipc connection, if you\'re using stdio option make sure you are setting up ipc'));
+      }
 
-        // we only recycle the process on exit and if it is not in the middle
-        // of another recycling
-        if (this.firstStart && !this.isBusy) {
-          debugWorker(`trying to recycle worker [${this.id}], reason: process exit..`);
+      this._handleSpawnError = function(spawnError) {
+        debugWorker(`worker [${this.id}] spawn error callback..`);
 
-          this.exit = true;
-          this.firstStart = false;
-
-          this.recycle(() => {
-            this.exit = false;
-          });
+        if (!this.firstStart) {
+          isDone = true;
+          this._earlyError = true;
+          debugWorker(`worker [${this.id}] start was canceled because an early error: ${spawnError.message}`);
+          cb(spawnError);
         }
-      });
+      };
+
+      this._handleSpawnError = this._handleSpawnError.bind(this);
+
+      this._childProcess.once('error', this._handleSpawnError);
+
+      this._childProcess.on('error', this.onWorkerProcessError);
+
+      this._childProcess.on('exit', this.onWorkerProcessExitTryToRecyle);
+
+      if (connectionMode === 'ipc') {
+        this._childProcess.on('message', this.onWorkerProcessIpcMessage);
+      }
 
       this.emit('processCreated');
 
-      debugWorker(`checking if worker [${this.id}] is alive..`);
-
-      this.checkAlive((checkAliveErr) => {
-        if (checkAliveErr) {
-          debugWorker(`worker [${this.id}] is not alive..`);
-          return cb(checkAliveErr);
+      setImmediate(() => {
+        // the workers were killed explicitly by the user
+        if (this._hardKill || isDone) {
+          return;
         }
 
-        if (!this.firstStart) {
-          this.firstStart = true;
+        if (this._childProcess == null) {
+          debugWorker(`There is no child process for worker [${this.id}]..`);
+          return cb(new Error('There is no child process for worker'));
         }
 
-        debugWorker(`worker [${this.id}] is alive..`);
-        cb();
+        debugWorker(`checking if worker [${this.id}] is alive..`);
+
+        this.checkAlive((checkAliveErr) => {
+          if (isDone) {
+            return;
+          }
+
+          if (checkAliveErr) {
+            debugWorker(`worker [${this.id}] is not alive..`);
+            return cb(checkAliveErr);
+          }
+
+          this._earlyError = false;
+          this._childProcess.removeListener('error', this._handleSpawnError);
+
+          if (!this.firstStart) {
+            this.firstStart = true;
+          }
+
+          debugWorker(`worker [${this.id}] is alive..`);
+          cb();
+        });
       });
     });
   }
 
   checkAlive(cb, shot) {
-    let shotCount = shot || 1;
+    let shotCount = shot || 1,
+        connectionMode = this.options.connectionMode;
 
-    checkPortStatus(this.port, this.options.host, (err, portStatus) => {
-      if (!err && portStatus === 'open') {
+    function statusHandler(err, statusWorker) {
+      if (!err && statusWorker === 'open') {
         return cb();
       }
 
-      if (shotCount > 50) {
-        return cb(new Error('Unable to reach electron worker web server'));
+      if (connectionMode === 'server' && shotCount > 50) {
+        return cb(new Error(`Unable to reach electron worker - mode: ${connectionMode}`));
+      }
+
+      if (connectionMode === 'ipc' && err) {
+        return cb(err);
       }
 
       shotCount++;
 
-      setTimeout(() => {
-        this.checkAlive(cb, shotCount);
-      }, 100);
-    });
+      // re-try check
+      if (connectionMode === 'server') {
+        setTimeout(() => {
+          this.checkAlive(cb, shotCount);
+        }, 100);
+      }
+    }
+
+    if (connectionMode === 'server') {
+      checkPortStatus(this.port, this.options.host, statusHandler.bind(this));
+    } else if (connectionMode === 'ipc') {
+      checkIpcStatus(this._childProcess, statusHandler.bind(this));
+    }
   }
 
   execute(data, cb) {
-    let httpOpts,
+    let connectionMode = this.options.connectionMode,
+        httpOpts,
         req,
-        json;
+        json,
+        taskId;
 
     debugWorker(`new task for worker [${this.id}]..`);
 
     this.emit('task');
+
+    if (this._hardKill) {
+      debugWorker(`task execution stopped because worker [${this.id}] was killed by the user..`);
+      return;
+    }
+
+    if (connectionMode === 'ipc') {
+      debugWorker(`creating ipc task message for worker [${this.id}]..`);
+
+      taskId = uuid.v1();
+
+      this._taskCallback[taskId] = cb;
+
+      return this._childProcess.send({
+        workerEvent: 'task',
+        taskId: taskId,
+        payload: data
+      });
+    }
+
+    debugWorker(`creating request for worker [${this.id}]..`);
 
     httpOpts = {
       hostname: this.options.host,
@@ -259,6 +413,11 @@ class ElectronWorker extends EventEmitter {
       this.isBusy = true;
       this.emit('recycling');
 
+      if (this._hardKill) {
+        debugWorker(`recycling was stopped because worker [${this.id}] was killed by the user..`);
+        return;
+      }
+
       this.kill();
 
       debugWorker(`trying to re-start child process for worker [${this.id}]..`);
@@ -280,7 +439,9 @@ class ElectronWorker extends EventEmitter {
         debugWorker(`worker [${this.id}] has been recycled..`);
 
         this.shouldRevive = false;
+
         cb();
+
         this.emit('recycled');
       });
     } else {
@@ -288,13 +449,28 @@ class ElectronWorker extends EventEmitter {
     }
   }
 
-  kill() {
+  kill(hardKill) {
+    let connectionMode = this.options.connectionMode;
+
     debugWorker(`killing worker [${this.id}]..`);
+    this._hardKill = Boolean(hardKill);
 
     if (this._childProcess) {
       if (this._childProcess.connected) {
         debugWorker(`closing ipc connection - worker [${this.id}]..`);
         this._childProcess.disconnect();
+      }
+
+      // clean previous listeners
+      if (this._handleSpawnError) {
+        this._childProcess.removeListener('error', this._handleSpawnError);
+      }
+
+      this._childProcess.removeListener('error', this.onWorkerProcessError);
+      this._childProcess.removeListener('exit', this.onWorkerProcessExitTryToRecyle);
+
+      if (connectionMode === 'ipc') {
+        this._childProcess.removeListener('message', this.onWorkerProcessIpcMessage);
       }
 
       // guard against closing a process that has been closed before
@@ -304,6 +480,10 @@ class ElectronWorker extends EventEmitter {
           this._childProcess.kill(this.options.killSignal);
         } else {
           this._childProcess.kill();
+        }
+
+        if (!hardKill) {
+          this.onWorkerProcessExitTryToRecyle();
         }
       }
 
