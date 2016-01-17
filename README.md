@@ -7,7 +7,18 @@
 
 This module let you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scrapping, take screenshots, generate PDF, etc)
 
-## First create an electron script wrapped in a webserver
+## Modes
+
+There are two ways to communicate and distribute tasks between workers, each mode has its own way to use.
+
+- `server` -> Communication and task distribution will be doing using an embedded web server inside the electron process.
+- `ipc` -> Communication and task distribution will be doing using an ipc channel.
+
+The best mode to use will depend of how your electron app is implemented, however the recommended option is to use the `ipc` mode.
+
+### How to use server mode
+
+1.- First create an electron script wrapped in a webserver
 
 *script.js*
 ```js
@@ -34,10 +45,11 @@ app.on('ready', function() {
 ```
 
 
-## Start electron workers
+2.- Start electron workers
 
 ```js
 var electronWorkers = require('electron-workers')({
+  connectionMode: 'server',
   pathToScript: 'script.js',
   timeout: 5000,
   numberOfWorkers: 5
@@ -60,8 +72,86 @@ electronWorkers.start(function(startErr) {
 });
 ```
 
+### How to use ipc mode
+
+1.- First create an electron script
+
+You will have an ipc channel available, what this means is that you can use `process.send`, and listen `process.on('message', function() {})` inside your script
+
+*script.js*
+```js
+var app = require('app');
+
+var workerId = process.env.ELECTRON_WORKER_ID; // worker id useful for logging
+
+console.log('Hello from worker', workerId);
+
+app.on('ready', function() {
+  // first you will need to listen the `message` event in the process object
+  process.on('message', (data) => {
+    if (!data) {
+      return;
+    }
+    
+    // `electron-workers` will try to verify is your worker is alive sending you a `ping` event
+    if (data.workerEvent === 'ping') {
+      // responding the ping call.. this will notify `electron-workers` that your process is alive
+      process.send({ workerEvent: 'pong' });
+    } else if (data.workerEvent === 'task') { // when a new task is executed, you will recive a `task` event
+
+
+      console.log(data); //data -> { workerEvent: 'task', taskId: '....', payload: <whatever you have passed to `.execute`> }
+      
+      console.log(data.payload.someData); // -> someData
+
+      // you can do whatever you want here..
+    
+      // when the task has been processed,
+      // respond with a `taskResponse` event, the `taskId` that you have received, and a custom `response`
+      process.send({
+        workerEvent: 'taskResponse',
+        taskId: data.taskId,
+        response: {
+          value: data.payload.someData
+        }
+      });
+    }
+  });
+});
+```
+
+
+2.- Start electron workers
+
+```js
+var electronWorkers = require('electron-workers')({
+  connectionMode: 'ipc',
+  pathToScript: 'script.js',
+  timeout: 5000,
+  numberOfWorkers: 5
+});
+
+electronWorkers.start(function(startErr) {
+  if (startErr) {
+    return console.error(startErr);
+  }
+
+  // `electronWorkers` will send your data in a POST request to your electron script
+  electronWorkers.execute({ someData: 'someData' }, function(err, data) {
+    if (err) {
+      return console.error(err);
+    }
+
+    console.log(JSON.stringify(data)); // { value: 'someData' } 
+    electronWorkers.kill(); // kill all workers explicitly
+  });
+});
+```
+
+
 ## Options
 
+`connectionMode` - `server`, `ipc` mode, defaults to `server` mode if no specified.
 `pathToScript` (required) - path to the electron script<br/>
 `pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from `electron-prebuilt` or the value in your `$PATH`<br/>
 `debug` Number - pass debug port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)<br/>
