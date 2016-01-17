@@ -55,7 +55,7 @@ class ElectronManager extends EventEmitter {
     this.options.electronArgs = this.options.electronArgs || [];
     this.options.pathToElectron = this.options.pathToElectron || getElectronPath();
     this.options.numberOfWorkers = this.options.numberOfWorkers || numCPUs;
-    this.options.timeout = this.options.timeout || 180000;
+    this.options.timeout = this.options.timeout || 10000;
     this.options.host = this.options.host || '127.0.0.1';
     this.options.hostEnvVarName = this.options.hostEnvVarName || 'ELECTRON_WORKER_HOST';
     this.options.portEnvVarName = this.options.portEnvVarName || 'ELECTRON_WORKER_PORT';
