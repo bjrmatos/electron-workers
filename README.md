@@ -88,7 +88,7 @@ console.log('Hello from worker', workerId);
 
 app.on('ready', function() {
   // first you will need to listen the `message` event in the process object
-  process.on('message', (data) => {
+  process.on('message', function(data) {
     if (!data) {
       return;
     }
