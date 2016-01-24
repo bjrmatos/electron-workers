@@ -35,6 +35,7 @@ console.log('Hello from worker', workerId);
 app.on('ready', function() {
   // you can use any webserver library/framework you like (connect, express, hapi, etc)
   var server = http.createServer(function(req, res) {
+    // You can respond with a status `500` if you want to indicate that something went wrong
     res.writeHead(200, {'Content-Type': 'application/json'});
     // data passed to `electronWorkers.execute` will be available in req body
     req.pipe(res);
@@ -107,7 +108,8 @@ app.on('ready', function() {
       // you can do whatever you want here..
     
       // when the task has been processed,
-      // respond with a `taskResponse` event, the `taskId` that you have received, and a custom `response`
+      // respond with a `taskResponse` event, the `taskId` that you have received, and a custom `response`. 
+      // You can specify an `error` field if you want to indicate that something went wrong
       process.send({
         workerEvent: 'taskResponse',
         taskId: data.taskId,
