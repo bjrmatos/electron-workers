@@ -40,7 +40,7 @@ export default function(processObj, cb) {
         return;
       }
 
-      if (shotCount > 50) {
+      if (shotCount > 200) {
         isDone = true;
         return cb(new Error(`Worker timeout (${timeout} ms) ocurred waiting for ipc connection to be available`));
       }
