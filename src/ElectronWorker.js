@@ -138,6 +138,10 @@ class ElectronWorker extends EventEmitter {
         return;
       }
 
+      if (payload.error) {
+        return callback(new Error(payload.error.message || 'An error has occurred when trying to process the task'));
+      }
+
       callback(null, responseData);
     }
   }
