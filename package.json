@@ -37,7 +37,7 @@
   "devDependencies": {
     "babel": "5.8.29",
     "eslint": "1.9.0",
-    "eslint-config-airbnb": "1.0.0",
+    "eslint-config-airbnb": "6.2.0",
     "mocha": "2.3.3",
     "npm-run-all": "1.2.12",
     "rimraf": "2.4.3",
