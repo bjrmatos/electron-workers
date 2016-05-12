@@ -1,18 +1,21 @@
-# electron-workers
-[![NPM Version](http://img.shields.io/npm/v/electron-workers.svg?style=flat-square)](https://npmjs.com/package/electron-workers)
-[![License](http://img.shields.io/npm/l/electron-workers.svg?style=flat-square)](http://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/bjrmatos/electron-workers.png?branch=master)](https://travis-ci.org/bjrmatos/electron-workers)
+electron-workers
+================
+
+[![NPM Version](http://img.shields.io/npm/v/electron-workers.svg?style=flat-square)](https://npmjs.com/package/electron-workers)[![License](http://img.shields.io/npm/l/electron-workers.svg?style=flat-square)](http://opensource.org/licenses/MIT)[![Build Status](https://travis-ci.org/bjrmatos/electron-workers.png?branch=master)](https://travis-ci.org/bjrmatos/electron-workers)
 
 > **Run electron scripts in managed workers**
 
-This module let you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scrapping, take screenshots, generate PDF, etc)
+This module let you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scrapping, take screenshots, generate PDF, etc).
 
-## Modes
+*Works in electron@>=0.35.x <1.0.0*
+
+Modes
+-----
 
 There are two ways to communicate and distribute tasks between workers, each mode has its own way to use.
 
-- `server` -> Communication and task distribution will be doing using an embedded web server inside the electron process.
-- `ipc` -> Communication and task distribution will be doing using an ipc channel.
+-	`server` -> Communication and task distribution will be doing using an embedded web server inside the electron process.
+-	`ipc` -> Communication and task distribution will be doing using an ipc channel.
 
 The best mode to use will depend of how your electron app is implemented, however the recommended option is to use the `ipc` mode.
 
@@ -21,6 +24,7 @@ The best mode to use will depend of how your electron app is implemented, howeve
 1.- First create an electron script wrapped in a webserver
 
 *script.js*
+
 ```js
 var http = require('http'),
     app = require('app');
@@ -45,7 +49,6 @@ app.on('ready', function() {
 });
 ```
 
-
 2.- Start electron workers
 
 ```js
@@ -67,7 +70,7 @@ electronWorkers.start(function(startErr) {
       return console.error(err);
     }
 
-    console.log(JSON.stringify(data)); // { someData: 'someData' } 
+    console.log(JSON.stringify(data)); // { someData: 'someData' }
     electronWorkers.kill(); // kill all workers explicitly
   });
 });
@@ -80,6 +83,7 @@ electronWorkers.start(function(startErr) {
 You will have an ipc channel available, what this means is that you can use `process.send`, and listen `process.on('message', function() {})` inside your script
 
 *script.js*
+
 ```js
 var app = require('app');
 
@@ -93,7 +97,7 @@ app.on('ready', function() {
     if (!data) {
       return;
     }
-    
+
     // `electron-workers` will try to verify is your worker is alive sending you a `ping` event
     if (data.workerEvent === 'ping') {
       // responding the ping call.. this will notify `electron-workers` that your process is alive
@@ -102,13 +106,13 @@ app.on('ready', function() {
 
 
       console.log(data); //data -> { workerEvent: 'task', taskId: '....', payload: <whatever you have passed to `.execute`> }
-      
+
       console.log(data.payload.someData); // -> someData
 
       // you can do whatever you want here..
-    
+
       // when the task has been processed,
-      // respond with a `taskResponse` event, the `taskId` that you have received, and a custom `response`. 
+      // respond with a `taskResponse` event, the `taskId` that you have received, and a custom `response`.
       // You can specify an `error` field if you want to indicate that something went wrong
       process.send({
         workerEvent: 'taskResponse',
@@ -121,7 +125,6 @@ app.on('ready', function() {
   });
 });
 ```
-
 
 2.- Start electron workers
 
@@ -144,43 +147,60 @@ electronWorkers.start(function(startErr) {
       return console.error(err);
     }
 
-    console.log(JSON.stringify(data)); // { value: 'someData' } 
+    console.log(JSON.stringify(data)); // { value: 'someData' }
     electronWorkers.kill(); // kill all workers explicitly
   });
 });
 ```
 
+Options
+-------
 
-## Options
+`connectionMode` - `server`, `ipc` mode, defaults to `server` mode if no specified.`pathToScript` (required) - path to the electron script.
 
-`connectionMode` - `server`, `ipc` mode, defaults to `server` mode if no specified.
-`pathToScript` (required) - path to the electron script<br/>
-`pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from `electron-prebuilt` or the value in your `$PATH`<br/>
-`debug` Number - pass debug port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)<br/>
-`debugBrk` Number - pass debug-brk port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)<br/>
-`electronArgs` Array - pass custom arguments to the electron executable. ej: `electronArgs: ['--some-value=2', '--enable-some-behaviour']`<br/>
-`env` Object - pass custom env vars to workers. ej: `env: { CUSTOM_ENV: 'foo' }`<br />
-`stdio` pass custom stdio option to worker's child process. see [node.js documentation](https://nodejs.org/api/child_process.html#child_process_options_stdio) for details<br/>
-`killSignal` String - when calling `electronWorkers.kill()` this value will be used to [kill the child process](https://nodejs.org/api/child_process.html#child_process_child_kill_signal) attached to the worker. see node.js docs for [more info on signal events](https://nodejs.org/api/process.html#process_signal_events)<br /> 
-`timeout` - execution timeout in ms<br/>
-`numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine<br/>
-`host` - ip or hostname where to start listening phantomjs web service, default 127.0.0.1<br/>
-`portLeftBoundary` - don't specify if you just want to take any random free port<br/>
-`portRightBoundary` - don't specify if you just want to take any random free port<br/>
-`hostEnvVarName` - customize the name of the environment variable passed to the electron script that specifies the worker host. defaults to `ELECTRON_WORKER_HOST`<br/>
+`pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from `electron-prebuilt` or the value in your `$PATH`.
+
+`debug` Number - pass debug port to electron process,[see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/).
+
+`debugBrk` Number - pass debug-brk port to electron process, [see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/)
+
+`electronArgs` Array - pass custom arguments to the electron executable. ej: `electronArgs: ['--some-value=2', '--enable-some-behaviour']`.
+
+`env` Object - pass custom env vars to workers. ej: `env: { CUSTOM_ENV: 'foo' }`.
+
+`stdio` pass custom stdio option to worker's child process. see [node.js documentation](https://nodejs.org/api/child_process.html#child_process_options_stdio) for details.
+
+`killSignal` String - when calling `electronWorkers.kill()` this value will be used to [kill the child process](https://nodejs.org/api/child_process.html#child_process_child_kill_signal) attached to the worker. see node.js docs for [more info on signal events](https://nodejs.org/api/process.html#process_signal_events)
+
+`timeout` - execution timeout in ms.
+
+`numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine.
+
+`host` - ip or hostname where to start listening phantomjs web service, default 127.0.0.1
+
+`portLeftBoundary` - don't specify if you just want to take any random free port
+
+`portRightBoundary` - don't specify if you just want to take any random free port
+
+`hostEnvVarName` - customize the name of the environment variable passed to the electron script that specifies the worker host. defaults to `ELECTRON_WORKER_HOST`
+
 `portEnvVarName` - customize the name of the environment variable passed to the electron script that specifies the worker port. defaults to `ELECTRON_WORKER_PORT`
 
-## Troubleshooting
+Troubleshooting
+---------------
 
-If you are using node with [nvm](https://github.com/creationix/nvm) and you have installed electron with `npm install -g electron-prebuilt` you probably will see an error or log with `env: node: No such file or directory`, this is because the electron executable installed by `electron-prebuilt` is a node CLI spawning the real electron executable internally, since nvm don't install/symlink node to `/usr/bin/env/node` when the electron executable installed by `electron-prebuilt` tries to run, it will fail because `node` won't be found in that context..
+If you are using node with [nvm](https://github.com/creationix/nvm) and you have installed electron with `npm install -g electron-prebuilt` you probably will see an error or log with `env: node: No such file or directory`, this is because the electron executable installed by `electron-prebuilt` is a node CLI spawning the real electron executable internally, since nvm don't install/symlink node to `/usr/bin/env/node` when the electron executable installed by `electron-prebuilt` tries to run, it will fail because `node` won't be found in that context.
 
-*Solution:* 
+Solution
+--------
 
-1.- Install `electron-prebuilt` as a dependency in your app, this is the option **recommended** because you probably want to ensure your app always run with the exact version you tested it, and probably you dotn't want to install electron globally in your system.
+1.- Install `electron-prebuilt` as a dependency in your app, this is the option **recommended** because you probably want to ensure your app always run with the exact version you tested it, and probably you don't want to install electron globally in your system.
 
-2.- You can make a symlink to `/usr/bin/env/node` but this is **not recommended** by nvm authors, because you will loose all the power that nvm brings.
+2.- You can make a symlink to `/usr/bin/env/node` but this is**not recommended** by nvm authors, because you will loose all the power that nvm brings.
 
 3.- Put the path to the **real electron executable** in your `$PATH`.
 
-## License
+License
+-------
+
 See [license](https://github.com/bjrmatos/electron-workers/blob/master/LICENSE)
