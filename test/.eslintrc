@@ -1,0 +1,5 @@
+{
+  "env": {
+    "mocha": true // adds all of the Mocha testing global variables.
+  }
+}
