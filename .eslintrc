@@ -1,5 +1,5 @@
 {
-  "extends": "eslint-config-airbnb/base", // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb/.eslintrc
+  "extends": "eslint-config-airbnb-base",
 
   // Allow the following global variables
   "env": {
@@ -8,9 +8,10 @@
     "mocha": true // adds all of the Mocha testing global variables.
   },
 
-  "ecmaFeatures": {
-    "restParams": true,
-    "experimentalObjectRestSpread": true
+  "parserOptions": {
+    "ecmaFeatures": {
+      experimentalObjectRestSpread: true
+    }
   },
 
   "rules": {
@@ -52,6 +53,7 @@
       "builtinGlobals": true
     }],
     "wrap-iife": [2, "inside"],
+    "max-len": [2, 130, 2, {"ignoreUrls": true}],
 
     /**
      * Style
@@ -61,13 +63,15 @@
         "var": 2,
         "let": 2,
         "const": 3
-      }
+      },
+      "SwitchCase": 1
     }],
     "func-names": 0,
     "no-multiple-empty-lines": [2, {
       "max": 1
     }],
     "no-extra-parens": [2, "functions"],
-    "one-var": 0
+    "one-var": 0,
+    "space-before-function-paren": [2, "never"]
   }
 }
