@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "debug": "2.2.0",
-    "lodash.findindex": "3.2.1",
+    "lodash.findindex": "4.2.0",
     "net-cluster": "0.0.2",
     "portscanner": "1.0.0",
     "uuid": "2.0.1",
