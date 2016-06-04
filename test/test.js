@@ -4,7 +4,8 @@ import os from 'os';
 import should from 'should';
 import createManager from '../src/index';
 
-/* eslint padded-blocks: [0] */
+/* eslint-disable padded-blocks */
+/* eslint-disable prefer-arrow-callback */
 describe('electron-workers', () => {
 
   describe('server mode', () => {
@@ -199,13 +200,9 @@ describe('electron-workers', () => {
               let workerIds,
                   workersNotFound;
 
-              workerIds = electronManager._electronInstances.map((worker) => {
-                return worker.id;
-              });
+              workerIds = electronManager._electronInstances.map((worker) => worker.id);
 
-              workersNotFound = workerIds.filter((workerId) => {
-                return workersResponseId.indexOf(workerId) === -1;
-              });
+              workersNotFound = workerIds.filter((workerId) => workersResponseId.indexOf(workerId) === -1);
 
               should(workersNotFound.length).be.eql(0);
               electronManager.kill();
@@ -380,9 +377,7 @@ describe('electron-workers', () => {
           return done(startErr);
         }
 
-        busyWorkers = electronManager._electronInstances.filter((worker) => {
-          return worker.isBusy === true;
-        });
+        busyWorkers = electronManager._electronInstances.filter((worker) => worker.isBusy === true);
 
         should(busyWorkers.length).be.eql(0);
         electronManager.kill();
@@ -430,13 +425,9 @@ describe('electron-workers', () => {
               let workerIds,
                   workersNotCalled;
 
-              workerIds = electronManager._electronInstances.map((worker) => {
-                return worker.id;
-              });
+              workerIds = electronManager._electronInstances.map((worker) => worker.id);
 
-              workersNotCalled = workerIds.filter((workerId) => {
-                return workersCalled.indexOf(workerId) === -1;
-              });
+              workersNotCalled = workerIds.filter((workerId) => workersCalled.indexOf(workerId) === -1);
 
               should(workersNotCalled.length).be.eql(0);
               electronManager.kill();
@@ -511,9 +502,9 @@ describe('electron-workers', () => {
       electronManager.on('workerProcessCreated', function(worker) {
         numberOfProcess++;
 
-        let matchWorker = electronManager._electronInstances.filter((electronInstance) => {
-          return electronInstance.id === worker.id;
-        });
+        let matchWorker = electronManager._electronInstances.filter(
+          (electronInstance) => electronInstance.id === worker.id
+        );
 
         should(matchWorker.length).be.eql(1);
 

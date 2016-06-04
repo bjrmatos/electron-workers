@@ -13,7 +13,7 @@ import ElectronWorker from './ElectronWorker';
 import { name as pkgName } from '../package.json';
 
 const numCPUs = os.cpus().length,
-      debugManager = debug(pkgName + ':manager');
+      debugManager = debug(`${pkgName}:manager`);
 
 let ELECTRON_PATH;
 
@@ -28,6 +28,8 @@ function getElectronPath() {
   try {
     // first try to find the electron executable if it is installed from electron-prebuilt..
     debugManager('trying to get electron path from electron-prebuilt module..');
+
+    // eslint-disable-next-line global-require
     electron = require('electron-prebuilt');
   } catch (err) {
     if (err.code === 'MODULE_NOT_FOUND') {

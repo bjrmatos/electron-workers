@@ -11,7 +11,7 @@ import checkPortStatus from './checkPortStatus';
 import checkIpcStatus from './checkIpcStatus';
 import { name as pkgName } from '../package.json';
 
-const debugWorker = debugPkg(pkgName + ':worker');
+const debugWorker = debugPkg(`${pkgName}:worker`);
 
 function findFreePort(host, cb) {
   let server = netCluster.createServer(),
@@ -34,7 +34,8 @@ function findFreePort(host, cb) {
 function findFreePortInRange(host, portLeftBoundary, portRightBoundary, cb) {
   let newPortLeftBoundary = portLeftBoundary;
 
-  // in cluster we don't want ports to collide, so we make a special space for every worker assuming max number of cluster workers is 5
+  // in cluster we don't want ports to collide, so we make a special space for every
+  // worker assuming max number of cluster workers is 5
   if (cluster.worker) {
     newPortLeftBoundary = portLeftBoundary + (((portRightBoundary - portLeftBoundary) / 5) * (cluster.worker.id - 1));
   }
@@ -181,9 +182,9 @@ class ElectronWorker extends EventEmitter {
       childArgs.unshift(pathToScript);
 
       if (debugBrk != null) {
-        childArgs.unshift('--debug-brk=' + debugBrk);
+        childArgs.unshift(`--debug-brk=${debugBrk}`);
       } else if (debug != null) {
-        childArgs.unshift('--debug=' + debug);
+        childArgs.unshift(`--debug=${debug}`);
       }
 
       if (err) {
@@ -219,7 +220,9 @@ class ElectronWorker extends EventEmitter {
 
       // ipc connection is required for ipc mode
       if (connectionMode === 'ipc' && !this._childProcess.send) {
-        return cb(new Error('ipc mode requires a ipc connection, if you\'re using stdio option make sure you are setting up ipc'));
+        return cb(new Error(
+          'ipc mode requires a ipc connection, if you\'re using stdio option make sure you are setting up ipc'
+        ));
       }
 
       this._handleSpawnError = function(spawnError) {
@@ -343,7 +346,7 @@ class ElectronWorker extends EventEmitter {
 
       return this._childProcess.send({
         workerEvent: 'task',
-        taskId: taskId,
+        taskId,
         payload: data
       });
     }
