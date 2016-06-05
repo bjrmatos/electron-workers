@@ -7,7 +7,7 @@ electron-workers
 
 This module let you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scrapping, take screenshots, generate PDF, etc).
 
-*Works in electron@>=0.35.x <1.0.0*
+*Works in electron@>=0.35.x including electron@1.x.x*
 
 Modes
 -----
