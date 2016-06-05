@@ -1,9 +1,9 @@
-/* eslint-disable */
 
-var http = require('http'),
-    app = require('app');
+// disabling eslint import because `electron` is a buil-in module
+// eslint-disable-next-line import/no-unresolved
+const { app } = require('electron');
 
-var workerId = process.env.ELECTRON_WORKER_ID;
+const workerId = process.env.ELECTRON_WORKER_ID;
 
 app.on('ready', () => {
   process.on('message', (data) => {

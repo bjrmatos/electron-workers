@@ -1,6 +1,7 @@
-/* eslint-disable */
 
-var app = require('app');
+// disabling eslint import because `electron` is a buil-in module
+// eslint-disable-next-line import/no-unresolved
+const { app } = require('electron');
 
 if (!process.send) {
   app.quit();

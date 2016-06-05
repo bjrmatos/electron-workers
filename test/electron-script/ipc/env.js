@@ -1,9 +1,10 @@
-/* eslint-disable */
 
-var app = require('app');
+// disabling eslint import because `electron` is a buil-in module
+// eslint-disable-next-line import/no-unresolved
+const { app } = require('electron');
 
-var foo = process.env.FOO,
-    customEnv = process.env.CUSTOM_ENV;
+const foo = process.env.FOO,
+      customEnv = process.env.CUSTOM_ENV;
 
 app.on('ready', () => {
   process.on('message', (data) => {
