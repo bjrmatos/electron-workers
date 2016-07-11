@@ -330,6 +330,8 @@ class ElectronWorker extends EventEmitter {
 
     debugWorker(`new task for worker [${this.id}]..`);
 
+    this.isBusy = true;
+
     this.emit('task');
 
     if (this._hardKill) {
@@ -342,7 +344,13 @@ class ElectronWorker extends EventEmitter {
 
       taskId = uuid.v1();
 
-      this._taskCallback[taskId] = cb;
+      this._taskCallback[taskId] = function(){
+
+        this.isBusy = false;
+
+        cb.apply(this, arguments);
+
+      }.bind(this);
 
       return this._childProcess.send({
         workerEvent: 'task',
