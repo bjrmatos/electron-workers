@@ -53,17 +53,28 @@ class ElectronManager extends EventEmitter {
     let instance = this;
 
     this._electronInstances = [];
+    this._electronInstancesTasksCount = {};
     this.options = { ...options };
     this.options.connectionMode = this.options.connectionMode || 'server';
     this.options.electronArgs = this.options.electronArgs || [];
     this.options.pathToElectron = this.options.pathToElectron || getElectronPath();
     this.options.numberOfWorkers = this.options.numberOfWorkers || numCPUs;
+    this.options.maxConcurrencyPerWorker = this.options.maxConcurrencyPerWorker || Infinity;
     this.options.timeout = this.options.timeout || 10000;
     this.options.host = this.options.host || '127.0.0.1';
     this.options.hostEnvVarName = this.options.hostEnvVarName || 'ELECTRON_WORKER_HOST';
     this.options.portEnvVarName = this.options.portEnvVarName || 'ELECTRON_WORKER_PORT';
     this._timeouts = [];
     this.tasksQueue = [];
+
+    if (isNaN(this.options.maxConcurrencyPerWorker) ||
+      typeof this.options.maxConcurrencyPerWorker !== 'number') {
+      throw new Error('`maxConcurrencyPerWorker` option must be a number');
+    }
+
+    if (this.options.maxConcurrencyPerWorker <= 0) {
+      throw new Error('`maxConcurrencyPerWorker` option must be greater than 0');
+    }
 
     function processExitHandler() {
       debugManager('process exit: trying to kill workers..');
@@ -142,6 +153,10 @@ class ElectronManager extends EventEmitter {
       });
 
       workerInstance.on('recycling', () => {
+        if (this._electronInstancesTasksCount[workerInstance.id] != null) {
+          this._electronInstancesTasksCount[workerInstance.id] = 0;
+        }
+
         this.emit('workerRecycling', workerInstance);
       });
 
@@ -155,7 +170,14 @@ class ElectronManager extends EventEmitter {
         this.tryFlushQueue();
       });
 
+      workerInstance.on('kill', () => {
+        if (this._electronInstancesTasksCount[workerInstance.id] != null) {
+          this._electronInstancesTasksCount[workerInstance.id] = 0;
+        }
+      });
+
       this._electronInstances.push(workerInstance);
+      this._electronInstancesTasksCount[workerInstance.id] = 0;
 
       this._electronInstances[ix].start(startHandler);
     }
@@ -185,6 +207,8 @@ class ElectronManager extends EventEmitter {
     if (availableWorkerInstanceIndex !== -1) {
       availableWorkerInstance = this._electronInstances.splice(availableWorkerInstanceIndex, 1)[0];
 
+      this._manageTaskStartInWorker(availableWorkerInstance);
+
       debugManager(`worker [${availableWorkerInstance.id}] has been choosen for the task..`);
 
       this._executeInWorker(availableWorkerInstance, data, options, cb);
@@ -196,6 +220,39 @@ class ElectronManager extends EventEmitter {
     debugManager('no workers available, storing the task for later processing..');
     // if no available worker save task for later processing
     this.tasksQueue.push({ data, options, cb });
+  }
+
+  _manageTaskStartInWorker(worker) {
+    const maxConcurrencyPerWorker = this.options.maxConcurrencyPerWorker;
+
+    if (this._electronInstancesTasksCount[worker.id] == null) {
+      this._electronInstancesTasksCount[worker.id] = 0;
+    }
+
+    if (this._electronInstancesTasksCount[worker.id] < maxConcurrencyPerWorker) {
+      this._electronInstancesTasksCount[worker.id]++;
+    }
+
+    // "equality check" is just enough here but we apply the "greater than" check just in case..
+    if (this._electronInstancesTasksCount[worker.id] >= maxConcurrencyPerWorker) {
+      worker.isBusy = true; // eslint-disable-line no-param-reassign
+    }
+  }
+
+  _manageTaskEndInWorker(worker) {
+    const maxConcurrencyPerWorker = this.options.maxConcurrencyPerWorker;
+
+    if (this._electronInstancesTasksCount[worker.id] == null) {
+      this._electronInstancesTasksCount[worker.id] = 0;
+    }
+
+    if (this._electronInstancesTasksCount[worker.id] > 0) {
+      this._electronInstancesTasksCount[worker.id]--;
+    }
+
+    if (this._electronInstancesTasksCount[worker.id] < maxConcurrencyPerWorker) {
+      worker.isBusy = false; // eslint-disable-line no-param-reassign
+    }
   }
 
   _executeInWorker(worker, data, options = {}, cb) {
@@ -238,6 +295,8 @@ class ElectronManager extends EventEmitter {
 
         isDone = true;
 
+        this._manageTaskEndInWorker(worker);
+
         this.emit('workerTimeout', worker);
 
         let error = new Error();
@@ -256,6 +315,8 @@ class ElectronManager extends EventEmitter {
         if (isDone) {
           return;
         }
+
+        this._manageTaskEndInWorker(worker);
 
         // clear timeout
         this._timeouts.splice(this._timeouts.indexOf(timeoutId), 1);
@@ -301,6 +362,8 @@ class ElectronManager extends EventEmitter {
 
     task = this.tasksQueue.shift();
     availableWorkerInstance = this._electronInstances.splice(availableWorkerInstanceIndex, 1)[0];
+
+    this._manageTaskStartInWorker(availableWorkerInstance);
 
     debugManager(`worker [${availableWorkerInstance.id}] has been choosen for process pending task..`);
 

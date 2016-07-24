@@ -176,6 +176,8 @@ Options
 
 `numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine.
 
+`maxConcurrencyPerWorker` - number of tasks a worker can handle at the same time, default `Infinity`
+
 `host` - ip or hostname where to start listening phantomjs web service, default 127.0.0.1
 
 `portLeftBoundary` - don't specify if you just want to take any random free port

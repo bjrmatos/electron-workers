@@ -64,6 +64,7 @@ class ElectronWorker extends EventEmitter {
     this.shouldRevive = false;
     this.exit = false;
     this.isBusy = false;
+    this.isRecycling = false;
     this.id = uuid.v1();
     this._hardKill = false;
     this._earlyError = false;
@@ -101,7 +102,7 @@ class ElectronWorker extends EventEmitter {
 
     // try revive the process when an error is received,
     // note that could not be spawn errors are not handled here..
-    if (this.firstStart && !this.isBusy && !this.shouldRevive) {
+    if (this.firstStart && !this.isRecycling && !this.shouldRevive) {
       debugWorker(`worker [${this.id}] the process will be revived because an error: ${workerProcessErr.message}`);
       this.shouldRevive = true;
     }
@@ -112,7 +113,7 @@ class ElectronWorker extends EventEmitter {
 
     // we only recycle the process on exit and if it is not in the middle
     // of another recycling
-    if (this.firstStart && !this.isBusy) {
+    if (this.firstStart && !this.isRecycling) {
       debugWorker(`trying to recycle worker [${this.id}], reason: process exit..`);
 
       this.exit = true;
@@ -342,7 +343,10 @@ class ElectronWorker extends EventEmitter {
 
       taskId = uuid.v1();
 
-      this._taskCallback[taskId] = cb;
+      this._taskCallback[taskId] = (...args) => {
+        this.emit('taskEnd');
+        cb.apply(undefined, args);
+      };
 
       return this._childProcess.send({
         workerEvent: 'task',
@@ -371,6 +375,8 @@ class ElectronWorker extends EventEmitter {
         let responseData;
 
         debugWorker(`request in worker [${this.id}] has ended..`);
+
+        this.emit('taskEnd');
 
         try {
           debugWorker(`trying to parse worker [${this.id}] response..`);
@@ -416,8 +422,10 @@ class ElectronWorker extends EventEmitter {
     }
 
     if (this._childProcess) {
+      this.isRecycling = true;
       // mark worker as busy before recycling
       this.isBusy = true;
+
       this.emit('recycling');
 
       if (this._hardKill) {
@@ -430,8 +438,10 @@ class ElectronWorker extends EventEmitter {
       debugWorker(`trying to re-start child process for worker [${this.id}]..`);
 
       this.start((startErr) => {
+        this.isRecycling = false;
         // mark worker as free after recycling
         this.isBusy = false;
+
         // if there is a error on worker recycling, revive it on next execute
         if (startErr) {
           this.shouldRevive = Boolean(revive);
@@ -460,6 +470,9 @@ class ElectronWorker extends EventEmitter {
     let connectionMode = this.options.connectionMode;
 
     debugWorker(`killing worker [${this.id}]..`);
+
+    this.emit('kill');
+
     this._hardKill = Boolean(hardKill);
 
     if (this._childProcess) {
