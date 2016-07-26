@@ -5,7 +5,7 @@ electron-workers
 
 > **Run electron scripts in managed workers**
 
-This module let you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scrapping, take screenshots, generate PDF, etc).
+This module lets you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scraping, taking screenshots, generating PDFs, etc).
 
 *Works in electron@>=0.35.x including electron@1.x.x*
 
@@ -27,7 +27,7 @@ The best mode to use will depend of how your electron app is implemented, howeve
 
 ```js
 var http = require('http'),
-    app = require('app');
+    app = require('electron').app;
 
 // every worker gets unique port, get it from a process environment variables
 var port = process.env.ELECTRON_WORKER_PORT,
@@ -85,7 +85,7 @@ You will have an ipc channel available, what this means is that you can use `pro
 *script.js*
 
 ```js
-var app = require('app');
+var app = require('electron').app;
 
 var workerId = process.env.ELECTRON_WORKER_ID; // worker id useful for logging
 
@@ -196,9 +196,9 @@ If you are using node with [nvm](https://github.com/creationix/nvm) and you have
 Solution
 --------
 
-1.- Install `electron-prebuilt` as a dependency in your app, this is the option **recommended** because you probably want to ensure your app always run with the exact version you tested it, and probably you don't want to install electron globally in your system.
+1.- Install `electron-prebuilt` as a dependency in your app, this is the **recommended** option because you probably want to ensure your app will always run with the exact version you tested, and you probably don't want to install electron globally on your system.
 
-2.- You can make a symlink to `/usr/bin/env/node` but this is**not recommended** by nvm authors, because you will loose all the power that nvm brings.
+2.- You can make a symlink to `/usr/bin/env/node` but this is **not recommended** by nvm authors, because you will lose all the power that nvm brings.
 
 3.- Put the path to the **real electron executable** in your `$PATH`.
 
