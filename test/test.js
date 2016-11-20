@@ -265,6 +265,7 @@ describe('electron-workers', () => {
 
     it('should pass custom stdio to worker child process', function(done) {
       let customStdio = [null, null, null, 'ipc'];
+      let isDone = false;
 
       let electronManager = createManager({
         connectionMode: mode,
@@ -284,19 +285,23 @@ describe('electron-workers', () => {
 
         if (mode === 'ipc') {
           electronManager.kill();
-          done();
+          return done();
         }
 
         if (mode === 'server') {
           electronManager._electronInstances[0]._childProcess.on('message', function(msg) {
             should(msg).be.eql('ping');
-            electronManager.kill();
-            done();
+            if (!isDone) {
+              isDone = true;
+              electronManager.kill();
+              done();
+            }
           });
         }
 
         electronManager.execute({}, (executeErr) => {
-          if (executeErr) {
+          if (executeErr && !isDone) {
+            isDone = true;
             return done(executeErr);
           }
         });
@@ -365,6 +370,7 @@ describe('electron-workers', () => {
 
     it('worker process creation should emit event', function(done) {
       let numberOfProcess = 0;
+      let isDone = false;
 
       let electronManager = createManager({
         connectionMode: mode,
@@ -382,8 +388,11 @@ describe('electron-workers', () => {
         should(matchWorker.length).be.eql(1);
 
         if (numberOfProcess === 2) {
-          electronManager.kill();
-          done();
+          if (!isDone) {
+            isDone = true;
+            electronManager.kill();
+            done();
+          }
         }
       });
 
@@ -455,18 +464,11 @@ describe('electron-workers', () => {
           return done(startErr);
         }
 
-        electronManager.execute({}, function(executeErr) {
+        electronManager.execute({}, function(executeErr, data) {
+          responseData = data;
           if (executeErr) {
             return done(executeErr);
           }
-
-          electronManager.execute({}, function(executeErr2, data) {
-            if (executeErr2) {
-              return done(executeErr2);
-            }
-
-            responseData = data;
-          });
         });
       });
     });
@@ -788,5 +790,4 @@ describe('electron-workers', () => {
       });
     });
   }
-
 });

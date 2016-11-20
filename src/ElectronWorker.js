@@ -198,7 +198,8 @@ class ElectronWorker extends EventEmitter {
       childOpts = {
         env: {
           ...env,
-          ELECTRON_WORKER_ID: this.id
+          ELECTRON_WORKER_ID: this.id,
+          DISPLAY: process.env.DISPLAY
         }
       };
 
