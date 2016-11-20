@@ -199,6 +199,7 @@ class ElectronWorker extends EventEmitter {
         env: {
           ...env,
           ELECTRON_WORKER_ID: this.id,
+          // propagate the DISPLAY env var to make it work on LINUX
           DISPLAY: process.env.DISPLAY
         }
       };
