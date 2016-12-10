@@ -9,6 +9,14 @@ This module lets you run an electron script with scalability in mind, useful if 
 
 *Works in electron@>=0.35.x including electron@1.x.x*
 
+Requeriments
+------------
+
+-	Install [electron](http://electron.atom.io/) >= 0.35.x including electron@1, the easy way to install
+electron in your app is `npm install electron --save` or `npm install electron-prebuilt --save`
+(or you can pass the path to your `electron` executable using the `pathToElectron` option, see [options](#options))
+
+
 Modes
 -----
 
@@ -158,7 +166,7 @@ Options
 
 `connectionMode` - `server`, `ipc` mode, defaults to `server` mode if no specified.`pathToScript` (required) - path to the electron script.
 
-`pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from `electron-prebuilt` or the value in your `$PATH`.
+`pathToElectron` - path to the electron executable, by default we will try to find the path using the value returned from the `electron` or `electron-prebuilt` packages (if any of them are found), otherwhise we will try to find it in your `$PATH` env var.
 
 `debug` Number - pass debug port to electron process,[see electron's debugging guide](http://electron.atom.io/docs/v0.34.0/tutorial/debugging-main-process/).
 
