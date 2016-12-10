@@ -25,20 +25,6 @@ function getElectronPath() {
     return ELECTRON_PATH;
   }
 
-  try {
-    // first try to find the electron executable if it is installed from electron-prebuilt..
-    debugManager('trying to get electron path from `electron-prebuilt` module..');
-
-    // eslint-disable-next-line global-require
-    electron = require('electron-prebuilt');
-  } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
-
-    } else {
-      throw err;
-    }
-  }
-
   // first try to find the electron executable if it is installed from `electron`..
   electron = getElectronPathFromPackage('electron');
 
