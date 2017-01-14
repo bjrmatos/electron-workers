@@ -87,7 +87,7 @@ class ElectronManager extends EventEmitter {
     this.options.numberOfWorkers = this.options.numberOfWorkers || numCPUs;
     this.options.maxConcurrencyPerWorker = this.options.maxConcurrencyPerWorker || Infinity;
     this.options.timeout = this.options.timeout || 10000;
-    this.options.host = this.options.host || '127.0.0.1';
+    this.options.host = this.options.host || 'localhost';
     this.options.hostEnvVarName = this.options.hostEnvVarName || 'ELECTRON_WORKER_HOST';
     this.options.portEnvVarName = this.options.portEnvVarName || 'ELECTRON_WORKER_PORT';
     this._timeouts = [];

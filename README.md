@@ -186,7 +186,7 @@ Options
 
 `maxConcurrencyPerWorker` - number of tasks a worker can handle at the same time, default `Infinity`
 
-`host` - ip or hostname where to start listening phantomjs web service, default 127.0.0.1
+`host` - ip or hostname where to start listening electron web server, default localhost
 
 `portLeftBoundary` - don't specify if you just want to take any random free port
 
