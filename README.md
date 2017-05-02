@@ -180,6 +180,8 @@ Options
 
 `killSignal` String - when calling `electronWorkers.kill()` this value will be used to [kill the child process](https://nodejs.org/api/child_process.html#child_process_child_kill_signal) attached to the worker. see node.js docs for [more info on signal events](https://nodejs.org/api/process.html#process_signal_events)
 
+`pingTimeout` Number - time in ms to wait for worker response in order to be considered alive, note that we retry the ping to a worker several times, this value is the interval between those pings. Default: 100
+
 `timeout` - execution timeout in ms.
 
 `numberOfWorkers` - number of electron instances, by default it will be the number of cores in the machine.

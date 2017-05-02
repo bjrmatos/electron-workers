@@ -1,9 +1,8 @@
 
 import { Socket } from 'net';
 
-export default function(port, host, cb) {
-  let timeout = 50,
-      connectionRefused = false,
+export default function(timeout, port, host, cb) {
+  let connectionRefused = false,
       portStatus = null,
       error = null,
       socket;

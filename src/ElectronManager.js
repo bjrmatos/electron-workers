@@ -86,6 +86,7 @@ class ElectronManager extends EventEmitter {
     this.options.pathToElectron = this.options.pathToElectron || getElectronPath();
     this.options.numberOfWorkers = this.options.numberOfWorkers || numCPUs;
     this.options.maxConcurrencyPerWorker = this.options.maxConcurrencyPerWorker || Infinity;
+    this.options.pingTimeout = this.options.pingTimeout || 100;
     this.options.timeout = this.options.timeout || 10000;
     this.options.host = this.options.host || 'localhost';
     this.options.hostEnvVarName = this.options.hostEnvVarName || 'ELECTRON_WORKER_HOST';
@@ -160,6 +161,7 @@ class ElectronManager extends EventEmitter {
         env: this.options.env,
         stdio: this.options.stdio,
         connectionMode: this.options.connectionMode,
+        pingTimeout: this.options.pingTimeout,
         killSignal: this.options.killSignal,
         electronArgs: this.options.electronArgs,
         pathToElectron: this.options.pathToElectron,

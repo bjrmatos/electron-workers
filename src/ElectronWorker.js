@@ -108,8 +108,12 @@ class ElectronWorker extends EventEmitter {
     }
   }
 
-  onWorkerProcessExitTryToRecyle() {
+  onWorkerProcessExitTryToRecyle(code, signal) {
     debugWorker(`worker [${this.id}] onWorkerProcessExitTryToRecyle callback..`);
+
+    if (code != null || signal != null) {
+      debugWorker(`worker [${this.id}] electron process exit with code: ${code} and signal: ${signal}`);
+    }
 
     // we only recycle the process on exit and if it is not in the middle
     // of another recycling
@@ -221,6 +225,8 @@ class ElectronWorker extends EventEmitter {
 
       this._childProcess = childProcess.spawn(pathToElectron, childArgs, childOpts);
 
+      debugWorker(`electron process pid for worker [${this.id}]:`, this._childProcess.pid);
+
       // ipc connection is required for ipc mode
       if (connectionMode === 'ipc' && !this._childProcess.send) {
         return cb(new Error(
@@ -300,7 +306,7 @@ class ElectronWorker extends EventEmitter {
       }
 
       if (connectionMode === 'server' && shotCount > 50) {
-        return cb(new Error(`Unable to reach electron worker - mode: ${connectionMode}`));
+        return cb(new Error(`Unable to reach electron worker - mode: ${connectionMode}, ${(err || {}).message}`));
       }
 
       if (connectionMode === 'ipc' && err) {
@@ -318,9 +324,9 @@ class ElectronWorker extends EventEmitter {
     }
 
     if (connectionMode === 'server') {
-      checkPortStatus(this.port, this.options.host, statusHandler.bind(this));
+      checkPortStatus(this.options.pingTimeout, this.port, this.options.host, statusHandler.bind(this));
     } else if (connectionMode === 'ipc') {
-      checkIpcStatus(this._childProcess, statusHandler.bind(this));
+      checkIpcStatus(this.options.pingTimeout, this._childProcess, statusHandler.bind(this));
     }
   }
 

@@ -1,7 +1,6 @@
 
-export default function(processObj, cb) {
-  let timeout = 100,
-      isDone = false,
+export default function(timeout, processObj, cb) {
+  let isDone = false,
       timeoutId;
 
   function pongHandler(payload) {
@@ -29,9 +28,14 @@ export default function(processObj, cb) {
         return;
       }
 
+      if (shotCount <= 200) {
+        return;
+      }
+
       if (err) {
         isDone = true;
-        cb(new Error('message could not be sent to electron process'));
+        clearTimeout(timeoutId);
+        cb(new Error('ipc message could not be sent to electron process'));
       }
     });
 
