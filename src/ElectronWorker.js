@@ -145,8 +145,17 @@ class ElectronWorker extends EventEmitter {
       }
 
       if (payload.error) {
-        return callback(new Error(payload.error.message || 'An error has occurred when trying to process the task'));
+        let errorSerialized = JSON.stringify(payload.error);
+
+        debugWorker(`task in worker [${this.id}] ended with error: ${errorSerialized}`);
+
+        return callback(new Error(
+          payload.error.message ||
+          `An error has occurred when trying to process the task: ${errorSerialized}`
+        ));
       }
+
+      debugWorker(`task in worker [${this.id}] ended successfully`);
 
       callback(null, responseData);
     }
