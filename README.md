@@ -7,7 +7,9 @@ electron-workers
 
 This module lets you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scraping, taking screenshots, generating PDFs, etc).
 
-*Works in electron@>=0.35.x including electron@1.x.x*
+*Works with electron@>=0.35.x including electron@1.x.x*
+
+> Note: This package is designed to work when used from a node.js process/app, since **the main use case is to manage a pool of electron processes from a node.js process**. if for some reason you need to use this package to manage a pool of electron processes **from an electron process** then PR are welcome 😃
 
 Requeriments
 ------------
