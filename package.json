@@ -41,7 +41,7 @@
     "eslint-config-airbnb-base": "3.0.1",
     "eslint-plugin-import": "1.16.0",
     "in-publish": "2.0.0",
-    "mocha": "2.5.3",
+    "mocha": "5.2.0",
     "npm-run-all": "2.3.0",
     "rimraf": "2.5.4",
     "should": "9.0.2"
