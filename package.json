@@ -27,7 +27,7 @@
     "url": "git@github.com:bjrmatos/electron-workers.git"
   },
   "dependencies": {
-    "debug": "2.3.3",
+    "debug": "4.1.0",
     "lodash.findindex": "4.6.0",
     "net-cluster": "0.0.2",
     "portscanner": "1.2.0",
