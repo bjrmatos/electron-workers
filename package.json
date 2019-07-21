@@ -37,7 +37,7 @@
   "devDependencies": {
     "babel": "5.8.38",
     "electron": "1.6.6",
-    "eslint": "2.13.1",
+    "eslint": "6.1.0",
     "eslint-config-airbnb-base": "3.0.1",
     "eslint-plugin-import": "1.16.0",
     "in-publish": "2.0.0",
