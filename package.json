@@ -32,7 +32,7 @@
     "net-cluster": "0.0.2",
     "portscanner": "1.2.0",
     "uuid": "3.0.1",
-    "which": "1.2.12"
+    "which": "2.0.1"
   },
   "devDependencies": {
     "babel": "5.8.38",
