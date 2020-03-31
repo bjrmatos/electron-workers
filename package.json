@@ -31,7 +31,7 @@
     "lodash.findindex": "4.6.0",
     "net-cluster": "0.0.2",
     "portscanner": "1.2.0",
-    "uuid": "3.0.1",
+    "uuid": "7.0.3",
     "which": "1.2.12"
   },
   "devDependencies": {
