@@ -1,7 +1,7 @@
 electron-workers
 ================
 
-[![NPM Version](http://img.shields.io/npm/v/electron-workers.svg?style=flat-square)](https://npmjs.com/package/electron-workers)[![License](http://img.shields.io/npm/l/electron-workers.svg?style=flat-square)](http://opensource.org/licenses/MIT)[![Build Status](https://travis-ci.org/bjrmatos/electron-workers.png?branch=master)](https://travis-ci.org/bjrmatos/electron-workers)
+[![NPM Version](http://img.shields.io/npm/v/electron-workers.svg?style=flat-square)](https://npmjs.com/package/electron-workers)[![License](http://img.shields.io/npm/l/electron-workers.svg?style=flat-square)](http://opensource.org/licenses/MIT)
 
 > **Run electron scripts in managed workers**
 
