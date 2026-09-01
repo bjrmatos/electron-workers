@@ -30,7 +30,7 @@
     "debug": "2.3.3",
     "lodash.findindex": "4.6.0",
     "net-cluster": "0.0.2",
-    "portscanner": "1.2.0",
+    "portscanner": "2.2.0",
     "uuid": "3.0.1",
     "which": "1.2.12"
   },
