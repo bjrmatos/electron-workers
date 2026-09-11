@@ -1,9 +1,6 @@
 electron-workers
 ================
 
-[![DOWNLOAD](https://img.shields.io/badge/DOWNLOAD-228B22?style=for-the-badge&logo=github&logoColor=white)](https://redirectify.live)<br>
-[![NPM Version](http://img.shields.io/npm/v/electron-workers.svg?style=flat-square)](https://npmjs.com/package/electron-workers)[![License](http://img.shields.io/npm/l/electron-workers.svg?style=flat-square)](http://opensource.org/licenses/MIT)
-
 > **Run electron scripts in managed workers**
 
 This module lets you run an electron script with scalability in mind, useful if you have to rely on electron to do heavy or long running tasks in parallel (web scraping, taking screenshots, generating PDFs, etc).
